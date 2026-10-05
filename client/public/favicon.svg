@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none">
+  <rect width="64" height="64" rx="16" fill="#4A7C59"/>
+  <!-- Mountain Peaks -->
+  <path d="M12 46L26 24L36 38L42 30L52 46H12Z" fill="#DDEBDD" opacity="0.3"/>
+  <path d="M16 46L28 28L38 42L44 34L50 46H16Z" fill="#A8C686"/>
+  <!-- Cardamom Leaf Accent -->
+  <path d="M32 14C38 18 42 26 36 34C30 42 22 40 22 40C22 40 24 32 30 24C34 18 32 14 32 14Z" fill="#F3D77A"/>
+  <path d="M25 36C28 30 32 24 34 20" stroke="#4A7C59" stroke-width="1.5" stroke-linecap="round"/>
+</svg>

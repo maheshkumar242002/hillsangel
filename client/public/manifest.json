@@ -1,0 +1,17 @@
+{
+  "name": "Hills Angel Tours and Travels",
+  "short_name": "Hills Angel",
+  "description": "Handcrafted Hill Station Tours for Couples and Solo Explorers",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#F6FAF6",
+  "theme_color": "#4A7C59",
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "192x192 512x512",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
