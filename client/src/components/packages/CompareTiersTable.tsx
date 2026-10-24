@@ -24,29 +24,29 @@ export const CompareTiersTable: React.FC<CompareTiersTableProps> = ({
   // Comparison Matrix features
   const comparisonItems = [
     {
-      feature: 'Resort / Stay Standard',
-      premium: '3-Star Quality Heritage Resort / Swiss Valley Cottage',
-      extra: '5-Star Luxury Private Villa / Jacuzzi Suite with Fireplace',
+      feature: 'Safari Vehicle & Seating',
+      premium: 'Customized 4x4 Mahindra Commander Jeep (Up to 6 Persons)',
+      extra: 'VIP Modified 4x4 Thar / Open-Top Commander Jeep (Up to 6 Persons)',
     },
     {
-      feature: 'Transportation & Sightseeing',
-      premium: currentPackage.category === 'couple' ? 'Private Dedicated AC Sedan' : 'AC Push-Back Tempo Traveller',
-      extra: currentPackage.category === 'couple' ? 'Private Luxury SUV (Innova Crysta)' : 'Executive Luxury Force Urbania Coach',
+      feature: 'Trail Experience & Route',
+      premium: currentPackage.category === 'family' ? 'Family Sightseeing, Scenic Viewpoints & Safe Trails' : 'All Route Viewpoints & Mountain Off-Road Drive',
+      extra: currentPackage.category === 'family' ? 'VIP Priority Access, Guided Walking Safari & Photo Halts' : 'Extreme 4x4 Off-Roading, River Crossing & Deep Forest Trails',
     },
     {
-      feature: 'Meal Plan Included',
-      premium: 'Daily Breakfast & 4-Course Dinner',
-      extra: 'All Gourmet Meals (Breakfast, Chef Lunch, Curated Dinners)',
+      feature: 'Driver & Guide Assistance',
+      premium: 'Experienced Hill-Track Certified Local Driver Guide',
+      extra: 'Master 4x4 Off-Road Specialist + Spotter Guide',
     },
     {
-      feature: 'Romantic / Social Special',
-      premium: currentPackage.category === 'couple' ? 'Complimentary Bed Floral Decor & Cake' : 'Evening Campfire & Icebreaker Games',
-      extra: currentPackage.category === 'couple' ? 'Private Candlelight Dinner & 45-Min Photoshoot' : 'Live BBQ Grill, Telescope Stargazing & Drone Reel',
+      feature: 'Special Inclusions & Media',
+      premium: 'Complimentary Route Map & First Aid Kit',
+      extra: currentPackage.category === 'family' ? 'Complimentary Family Photos & Snacks Kit' : 'Action GoPro 4K Video Clips & Campfire Access',
     },
     {
-      feature: 'Exclusivity & Support',
-      premium: 'Dedicated Trip Coordinator & Sightseeing Passes',
-      extra: 'VIP Concierge, Priority Access, High-Speed Boating / 4x4 Safari',
+      feature: 'Entry Coordination & Support',
+      premium: 'Assistance with Forest Checkpoint & Entry Tickets',
+      extra: 'VIP Express Queue Assistance & 24/7 Dedicated Support',
     },
   ];
 

@@ -16,6 +16,7 @@ import {
 import { getFeaturedPackages, getDestinations } from '../api/packages';
 import PackageCard from '../components/packages/PackageCard';
 import BookingModal from '../components/booking/BookingModal';
+import SpecialFeatures from '../components/common/SpecialFeatures';
 import { PackageGridSkeleton } from '../components/common/Skeleton';
 import { useSettings } from '../context/SettingsContext';
 import { getWhatsAppUrl } from '../utils/whatsapp';
@@ -60,10 +61,10 @@ export default function Home(): React.ReactElement {
   return (
     <>
       <Helmet>
-        <title>Hills Angel Tours and Travels | Hill-Station Trips & Honeymoons</title>
+        <title>El Shaddai Jeep Safari Munnar | 4x4 Off-Road Safaris</title>
         <meta
           name="description"
-          content="Explore handcrafted hill station tour packages for couples and solo groups in Ooty, Munnar, and Kodaikanal. Premium & Extra Premium comfort."
+          content="Explore nature and feel alive with El Shaddai Jeep Safari Munnar. Special 4x4 off-road safari packages for Family Trips and Friends Trips across Kanthaloor, Mattupatty, Cochin, Viriparai & Ponmudi."
         />
       </Helmet>
 
@@ -73,8 +74,8 @@ export default function Home(): React.ReactElement {
           {/* Hero Background Image with misty green gradient overlay */}
           <div className="absolute inset-0 z-0">
             <img
-              src={settings.hero?.bannerImage || 'https://images.unsplash.com/photo-1589182373726-e4f658ab50f0?auto=format&fit=crop&w=1920&q=80'}
-              alt="Misty Hill-Station Valley"
+              src={settings.hero?.bannerImage || 'https://images.unsplash.com/photo-1544735716-392fe2489ffa?auto=format&fit=crop&w=1920&q=80'}
+              alt="Munnar 4x4 Jeep Safari"
               className="w-full h-full object-cover object-center scale-105 animate-in fade-in duration-1000"
             />
             {/* Dark green Elaichi gradient overlay */}
@@ -86,18 +87,18 @@ export default function Home(): React.ReactElement {
             {/* Top Badge */}
             <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/15 backdrop-blur-md border border-white/20 text-xs sm:text-sm font-medium mb-6 animate-in slide-in-from-top duration-500">
               <Sparkles className="w-4 h-4 text-gold-light" />
-              <span>{settings.hero?.badgeText || 'Curated Hill-Station Retreats'}</span>
+              <span>{settings.hero?.badgeText || 'El Shaddai 4x4 Jeep Safari Munnar'}</span>
             </div>
 
             {/* Main Heading */}
             <h1 className="text-3xl sm:text-5xl md:text-6xl font-bold tracking-tight mb-6 leading-tight drop-shadow-md">
-              {settings.hero?.title || 'Discover the Mist-Clad Peaks of South India'}
+              {settings.hero?.title || 'Adventure Awaits in Munnar • Ride, Explore, Discover'}
             </h1>
 
             {/* Subtitle */}
             <p className="max-w-2xl mx-auto text-base sm:text-lg text-gray-200 mb-8 sm:mb-10 font-normal leading-relaxed drop-shadow">
               {settings.hero?.subtitle ||
-                'Handcrafted journeys for couples seeking romantic tranquility and solo wanderers craving shared group trails.'}
+                'Explore nature and feel alive with El Shaddai Jeep Safari (KL 68 C 3024). Handcrafted 4x4 safari circuits across Kanthaloor, Mattupatty, Cochin, Viriparai & Ponmudi.'}
             </p>
 
             {/* Hero CTAs (Min 44x44px Tap Targets) */}
@@ -106,7 +107,7 @@ export default function Home(): React.ReactElement {
                 to="/packages"
                 className="w-full sm:w-auto min-h-[50px] px-8 py-3.5 rounded-2xl bg-gradient-to-r from-emerald-600 via-primary to-primary-dark text-white font-semibold shadow-elaichi-lg hover:brightness-110 active:scale-95 transition-all flex items-center justify-center gap-2"
               >
-                <span>Book Your Trip</span>
+                <span>Book Jeep Safari</span>
                 <ArrowRight className="w-4 h-4 text-accent-light" />
               </Link>
 
@@ -117,52 +118,75 @@ export default function Home(): React.ReactElement {
                 className="w-full sm:w-auto min-h-[50px] px-6 py-3.5 rounded-2xl bg-white/20 hover:bg-white/30 backdrop-blur-md text-white font-semibold border border-white/30 active:scale-95 transition-all flex items-center justify-center gap-2"
               >
                 <PhoneCall className="w-4 h-4 text-accent-light" />
-                <span>Talk to Travel Expert</span>
+                <span>Call / WhatsApp Concierge</span>
               </a>
             </div>
 
-            {/* Quick Pill Highlights */}
-            <div className="mt-12 pt-8 border-t border-white/10 flex flex-wrap items-center justify-center gap-6 sm:gap-10 text-xs sm:text-sm text-gray-200">
-              <div className="flex items-center gap-2">
-                <Heart className="w-4 h-4 text-rose-400" />
-                <span>Private Couple Retreats</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <Users className="w-4 h-4 text-accent" />
-                <span>Stranger Solo Trails</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <Award className="w-4 h-4 text-gold-light" />
-                <span>Premium & Extra-Premium Tiers</span>
-              </div>
+            {/* Quick Special Features Onboard Pills */}
+            <div className="mt-10 pt-6 border-t border-white/10 flex flex-wrap items-center justify-center gap-2.5 sm:gap-4 text-xs text-gray-200">
+              <a
+                href="#special-features"
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/10 hover:bg-white/20 backdrop-blur-md border border-white/15 transition-all text-emerald-300 font-semibold"
+              >
+                <span>🧰</span>
+                <span>Medikit Onboard</span>
+              </a>
+              <a
+                href="#special-features"
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/10 hover:bg-white/20 backdrop-blur-md border border-white/15 transition-all text-cyan-300 font-semibold"
+              >
+                <span>🫁</span>
+                <span>Emergency O2 Support</span>
+              </a>
+              <a
+                href="#special-features"
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/10 hover:bg-white/20 backdrop-blur-md border border-white/15 transition-all text-amber-300 font-semibold"
+              >
+                <span>🚙</span>
+                <span>4x4 Commander Rig</span>
+              </a>
+              <a
+                href="#special-features"
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/10 hover:bg-white/20 backdrop-blur-md border border-white/15 transition-all text-indigo-300 font-semibold"
+              >
+                <span>📹</span>
+                <span>GoPro & Drone Halts</span>
+              </a>
+              <a
+                href="#special-features"
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/10 hover:bg-white/20 backdrop-blur-md border border-white/15 transition-all text-teal-300 font-semibold"
+              >
+                <span>🌧️</span>
+                <span>All-Weather Shield</span>
+              </a>
             </div>
           </div>
         </section>
 
-        {/* ================= CATEGORY CARDS (COUPLE VS STRANGER) ================= */}
+        {/* ================= CATEGORY CARDS (FAMILY VS FRIENDS) ================= */}
         <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 sm:gap-8">
-            {/* Couple Package Feature Card */}
-            <div className="relative rounded-3xl overflow-hidden bg-gradient-to-br from-rose-900/90 via-[#2C1920] to-[#1F2D24] text-white p-6 sm:p-10 shadow-elaichi flex flex-col justify-between min-h-[320px] group">
+            {/* Family Trip Feature Card */}
+            <div className="relative rounded-3xl overflow-hidden bg-gradient-to-br from-emerald-950 via-[#183324] to-[#1F2D24] text-white p-6 sm:p-10 shadow-elaichi flex flex-col justify-between min-h-[320px] group">
               <div className="relative z-10 space-y-4">
-                <div className="inline-flex items-center gap-2 bg-white/15 backdrop-blur-md px-3.5 py-1.5 rounded-full text-xs font-semibold text-rose-200">
-                  <Heart className="w-3.5 h-3.5 fill-rose-300 text-rose-300" />
-                  <span>Private Couple Packages</span>
+                <div className="inline-flex items-center gap-2 bg-white/15 backdrop-blur-md px-3.5 py-1.5 rounded-full text-xs font-semibold text-emerald-200">
+                  <Users className="w-3.5 h-3.5 text-emerald-400" />
+                  <span>Family Trip Safaris</span>
                 </div>
                 <h3 className="font-serif text-2xl sm:text-3xl font-bold">
-                  Honeymoons & Romantic Escapes
+                  Family Sightseeing & Scenic Safaris
                 </h3>
-                <p className="text-xs sm:text-sm text-rose-100/80 leading-relaxed max-w-md">
-                  Private dedicated cab, intimate valley-view resorts, candlelit dinners, and scenic serenity built exclusively for two.
+                <p className="text-xs sm:text-sm text-emerald-100/80 leading-relaxed max-w-md">
+                  Safe, scenic 4x4 Jeep safaris designed for all generations. Relaxed tours of tea museums, rose gardens, cascading waterfalls, apple orchards, and peaceful lake dams.
                 </p>
               </div>
 
               <div className="relative z-10 pt-6">
                 <Link
-                  to="/packages?category=couple"
-                  className="inline-flex items-center gap-2 text-sm font-semibold text-white bg-rose-600/80 hover:bg-rose-600 px-5 py-2.5 rounded-xl transition-colors min-h-[44px]"
+                  to="/packages?category=family"
+                  className="inline-flex items-center gap-2 text-sm font-semibold text-white bg-emerald-700/80 hover:bg-emerald-700 px-5 py-2.5 rounded-xl transition-colors min-h-[44px]"
                 >
-                  <span>Explore Couple Trips</span>
+                  <span>Explore Family Trips</span>
                   <ChevronRight className="w-4 h-4" />
                 </Link>
               </div>
@@ -171,41 +195,41 @@ export default function Home(): React.ReactElement {
               <div className="absolute right-0 bottom-0 w-1/2 h-full opacity-20 pointer-events-none group-hover:scale-105 transition-transform duration-700">
                 <img
                   src="https://images.unsplash.com/photo-1544735716-392fe2489ffa?auto=format&fit=crop&w=600&q=80"
-                  alt=""
+                  alt="Munnar Family Safari"
                   className="w-full h-full object-cover"
                 />
               </div>
             </div>
 
-            {/* Stranger Package Feature Card */}
-            <div className="relative rounded-3xl overflow-hidden bg-gradient-to-br from-[#1E3A2B] via-[#193024] to-[#122018] text-white p-6 sm:p-10 shadow-elaichi flex flex-col justify-between min-h-[320px] group">
+            {/* Friends Trip Feature Card */}
+            <div className="relative rounded-3xl overflow-hidden bg-gradient-to-br from-[#2E2012] via-[#241A13] to-[#122018] text-white p-6 sm:p-10 shadow-elaichi flex flex-col justify-between min-h-[320px] group">
               <div className="relative z-10 space-y-4">
-                <div className="inline-flex items-center gap-2 bg-white/15 backdrop-blur-md px-3.5 py-1.5 rounded-full text-xs font-semibold text-emerald-200">
-                  <Users className="w-3.5 h-3.5 text-accent" />
-                  <span>Stranger Group Trails</span>
+                <div className="inline-flex items-center gap-2 bg-white/15 backdrop-blur-md px-3.5 py-1.5 rounded-full text-xs font-semibold text-amber-200">
+                  <Compass className="w-3.5 h-3.5 text-accent" />
+                  <span>Friends Trip Adventure Safaris</span>
                 </div>
                 <h3 className="font-serif text-2xl sm:text-3xl font-bold">
-                  Solo Travelers Joining Together
+                  Extreme 4x4 Off-Road & Mountain Trails
                 </h3>
-                <p className="text-xs sm:text-sm text-emerald-100/80 leading-relaxed max-w-md">
-                  Shared AC tempo traveller, cozy group stays, night campfires, guided treks, and lifelong friendships in the hills.
+                <p className="text-xs sm:text-sm text-amber-100/80 leading-relaxed max-w-md">
+                  Action-packed group thrills: deep river crossings, tiger cave explorations, ziplines, hanging bridges, and high-altitude windmill ridges with your squad.
                 </p>
               </div>
 
               <div className="relative z-10 pt-6">
                 <Link
-                  to="/packages?category=stranger"
-                  className="inline-flex items-center gap-2 text-sm font-semibold text-white bg-primary hover:bg-primary-dark px-5 py-2.5 rounded-xl transition-colors min-h-[44px]"
+                  to="/packages?category=friends"
+                  className="inline-flex items-center gap-2 text-sm font-semibold text-white bg-amber-600 hover:bg-amber-700 px-5 py-2.5 rounded-xl transition-colors min-h-[44px]"
                 >
-                  <span>Explore Stranger Trails</span>
+                  <span>Explore Friends Trips</span>
                   <ChevronRight className="w-4 h-4" />
                 </Link>
               </div>
 
               <div className="absolute right-0 bottom-0 w-1/2 h-full opacity-20 pointer-events-none group-hover:scale-105 transition-transform duration-700">
                 <img
-                  src="https://images.unsplash.com/photo-1510312305653-8ed496efae75?auto=format&fit=crop&w=600&q=80"
-                  alt=""
+                  src="https://images.unsplash.com/photo-1533473359331-0135ef1b58bf?auto=format&fit=crop&w=600&q=80"
+                  alt="4x4 Off-Road Jeep"
                   className="w-full h-full object-cover"
                 />
               </div>
@@ -213,22 +237,25 @@ export default function Home(): React.ReactElement {
           </div>
         </section>
 
+        {/* ================= SPECIAL FEATURES & SAFETY SECTION ================= */}
+        <SpecialFeatures />
+
         {/* ================= FEATURED PACKAGES ================= */}
-        <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <section id="packages" className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex flex-col sm:flex-row sm:items-end justify-between mb-8 sm:mb-12 gap-4">
             <div>
               <span className="text-xs font-bold uppercase tracking-wider text-primary">
                 Handcrafted Itineraries
               </span>
               <h2 className="text-2xl sm:text-4xl font-bold text-text mt-1">
-                Featured Hill Getaways
+                Featured Safari Circuits
               </h2>
             </div>
             <Link
               to="/packages"
               className="inline-flex items-center gap-1.5 text-sm font-semibold text-primary hover:text-primary-dark transition-colors self-start sm:self-auto min-h-[44px]"
             >
-              <span>View All 12 Packages</span>
+              <span>View All Safari Packages</span>
               <ArrowRight className="w-4 h-4" />
             </Link>
           </div>

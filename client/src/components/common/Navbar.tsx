@@ -40,6 +40,7 @@ export const Navbar: React.FC = () => {
   const navLinks = [
     { name: 'Home', path: '/' },
     { name: 'Tour Packages', path: '/packages' },
+    { name: 'Special Features', path: '/#special-features' },
     { name: 'About Us', path: '/about' },
     { name: 'Gallery', path: '/gallery' },
     { name: 'Contact', path: '/contact' },
@@ -47,11 +48,34 @@ export const Navbar: React.FC = () => {
 
   const whatsappDirect = getWhatsAppUrl(
     settings.whatsappNumber,
-    '🌿 Hello Hills Angel Tours! I would like to enquire about your hill station holiday packages.'
+    '🌿 Hello El Shaddai Jeep Safari! I would like to enquire about your Munnar 4x4 packages.'
   );
 
   return (
     <>
+      {/* Top Special Features Announcement Strip */}
+      <div className="bg-[#122316] text-white text-[11px] sm:text-xs py-1.5 px-4 text-center border-b border-white/10 flex items-center justify-center gap-2 sm:gap-4 overflow-x-auto whitespace-nowrap scrollbar-none z-50 relative">
+        <span className="inline-flex items-center gap-1 font-bold text-emerald-300">
+          <Sparkles className="w-3.5 h-3.5" />
+          <span>Onboard Special Features:</span>
+        </span>
+        <span className="text-emerald-100 flex items-center gap-1">
+          <span className="text-sm">🧰</span> Medikit Onboard
+        </span>
+        <span className="text-emerald-600">•</span>
+        <span className="text-emerald-100 flex items-center gap-1">
+          <span className="text-sm">🫁</span> Emergency O2 Cylinder
+        </span>
+        <span className="text-emerald-600">•</span>
+        <span className="text-emerald-100 flex items-center gap-1">
+          <span className="text-sm">🚙</span> 4x4 Rig (KL 68 C 3024)
+        </span>
+        <span className="text-emerald-600">•</span>
+        <span className="text-emerald-100 flex items-center gap-1">
+          <span className="text-sm">🌧️</span> Rain & Wind Shield
+        </span>
+      </div>
+
       <header
         className={`sticky top-0 z-40 transition-all duration-300 ${
           scrolled

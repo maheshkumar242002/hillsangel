@@ -47,15 +47,18 @@ export const BookingCardTSX: React.FC<BookingCardTSXProps> = ({
           className={`text-[11px] font-bold uppercase rounded-lg px-2.5 py-1 border border-gray-200 focus:outline-none cursor-pointer ${
             booking.status === 'confirmed'
               ? 'bg-emerald-50 text-emerald-800'
+              : booking.status === 'in_progress'
+              ? 'bg-blue-50 text-blue-800 border-blue-200 font-extrabold'
+              : booking.status === 'completed'
+              ? 'bg-purple-50 text-purple-800'
               : booking.status === 'cancelled'
               ? 'bg-rose-50 text-rose-800'
-              : booking.status === 'completed'
-              ? 'bg-blue-50 text-blue-800'
               : 'bg-amber-50 text-amber-800'
           }`}
         >
           <option value="pending">Pending</option>
           <option value="confirmed">Confirmed</option>
+          <option value="in_progress">Trip Started (In Progress)</option>
           <option value="completed">Completed</option>
           <option value="cancelled">Cancelled</option>
         </select>

@@ -25,18 +25,18 @@ export const FilterSheet: React.FC<FilterSheetProps> = ({
   const [mobileDrawerOpen, setMobileDrawerOpen] = useState<boolean>(false);
 
   const categories = [
-    { id: 'all', label: 'All Packages' },
-    { id: 'couple', label: 'Couple (Private 2P)' },
-    { id: 'stranger', label: 'Stranger (Solo Group)' },
+    { id: 'all', label: 'All Safaris' },
+    { id: 'family', label: 'Family Trip' },
+    { id: 'friends', label: 'Friends Trip' },
   ];
 
   const tiers = [
     { id: 'all', label: 'All Tiers' },
-    { id: 'premium', label: 'Premium (3★ Resort)' },
-    { id: 'extra_premium', label: 'Extra Premium (5★ Luxury / Villa)' },
+    { id: 'premium', label: 'Standard 4x4 Safari' },
+    { id: 'extra_premium', label: 'VIP Open-Top 4x4 Safari' },
   ];
 
-  const destinations = ['all', 'Ooty', 'Munnar', 'Kodaikanal'];
+  const destinations = ['all', 'Munnar'];
 
   const sortOptions = [
     { id: 'featured', label: 'Recommended / Featured' },

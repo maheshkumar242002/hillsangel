@@ -19,14 +19,13 @@ export default function GalleryPage(): React.ReactElement {
           type: activeType !== 'all' ? activeType : undefined,
           tag: activeTag !== 'all' ? activeTag : undefined,
         });
-        if (res.success && res.items.length > 0) {
+        if (res.success && res.items) {
           setItems(res.items);
         } else {
-          // If no items returned yet from server, keep fallback
-          setItems(defaultFallbackItems);
+          setItems([]);
         }
       } catch (err) {
-        setItems(defaultFallbackItems);
+        setItems([]);
       } finally {
         setLoading(false);
       }
@@ -34,73 +33,6 @@ export default function GalleryPage(): React.ReactElement {
 
     fetchMedia();
   }, [activeType, activeTag]);
-
-  const defaultFallbackItems: IGalleryItem[] = [
-    {
-      _id: '1',
-      title: 'Misty Sunrise over the Nilgiri Hills',
-      type: 'photo',
-      url: 'https://images.unsplash.com/photo-1589182373726-e4f658ab50f0?auto=format&fit=crop&w=1200&q=80',
-      caption: 'Misty sunrise breaking through the Nilgiri valley eucalyptus pine groves, Ooty.',
-      tag: 'Ooty',
-    },
-    {
-      _id: '2',
-      title: 'Emerald Tea Terraces Rolling into Clouds',
-      type: 'photo',
-      url: 'https://images.unsplash.com/photo-1596178065887-1198b6148b2b?auto=format&fit=crop&w=1200&q=80',
-      caption: 'Early morning fog rolling across the high altitude tea plantations of Munnar.',
-      tag: 'Munnar',
-    },
-    {
-      _id: '3',
-      title: 'Scenic Mountain Cascades & Tea Estate Drone Tour',
-      type: 'video',
-      url: 'https://assets.mixkit.co/videos/preview/mixkit-forest-stream-in-the-sunlight-529-large.mp4',
-      caption: 'Breathtaking 4K drone sweep across misty mountain cascades and tea estates.',
-      tag: 'Munnar',
-    },
-    {
-      _id: '4',
-      title: 'Private Mountain Villa Jacuzzi Deck',
-      type: 'photo',
-      url: 'https://images.unsplash.com/photo-1566073771259-6a8506099945?auto=format&fit=crop&w=1200&q=80',
-      caption: 'Private heated cliffside jacuzzi facing mist-covered mountain valleys.',
-      tag: 'Extra Premium Stay',
-    },
-    {
-      _id: '5',
-      title: 'Acoustic Campfire Night Under Hill Stars',
-      type: 'video',
-      url: 'https://assets.mixkit.co/videos/preview/mixkit-bonfire-burning-in-the-dark-at-night-42861-large.mp4',
-      caption: 'Live acoustic guitar campfire and storytelling session with our stranger trail explorers.',
-      tag: 'Stranger Trails',
-    },
-    {
-      _id: '6',
-      title: 'Star-Shaped Lake Reflection, Kodaikanal',
-      type: 'photo',
-      url: 'https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=1200&q=80',
-      caption: 'Calm morning boat rides along the star-shaped pine-fringed Kodaikanal lake.',
-      tag: 'Kodaikanal',
-    },
-    {
-      _id: '7',
-      title: 'Romantic Candlelight Dinner Setup in the Hills',
-      type: 'photo',
-      url: 'https://images.unsplash.com/photo-1582719508461-905c673771fd?auto=format&fit=crop&w=1200&q=80',
-      caption: 'Intimate candlelit gourmet dinner under fairy lights in the cardamom hills.',
-      tag: 'Couple Escapes',
-    },
-    {
-      _id: '8',
-      title: '4x4 Off-Road Jeep Trail to Cloud Summit',
-      type: 'video',
-      url: 'https://assets.mixkit.co/videos/preview/mixkit-car-traveling-on-a-road-in-the-mountains-41549-large.mp4',
-      caption: 'Thrilling off-road climb through private forest trails to peak sunrise viewpoint.',
-      tag: 'Adventure Trek',
-    },
-  ];
 
   const tagsList = ['all', 'Ooty', 'Munnar', 'Kodaikanal', 'Couple Escapes', 'Stranger Trails', 'Extra Premium Stay', 'Adventure Trek'];
 
@@ -194,6 +126,11 @@ export default function GalleryPage(): React.ReactElement {
           <div className="min-h-[300px] flex flex-col items-center justify-center space-y-3">
             <Loader2 className="w-8 h-8 text-primary animate-spin" />
             <span className="text-xs text-muted">Gathering hill station moments...</span>
+          </div>
+        ) : items.length === 0 ? (
+          <div className="bg-white rounded-3xl border border-gray-200 p-12 text-center max-w-lg mx-auto space-y-3 shadow-sm">
+            <h3 className="font-serif text-xl font-bold text-text">No media found</h3>
+            <p className="text-xs sm:text-sm text-muted">There are no photos or videos available at the moment.</p>
           </div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">

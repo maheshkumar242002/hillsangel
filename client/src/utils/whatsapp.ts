@@ -25,33 +25,63 @@ export function buildBookingWhatsAppMessage(booking: Partial<IBooking> & { packa
       })
     : 'To be confirmed';
 
+  const isVehicleRentalOnly = booking.bookingType === 'vehicle_rental_with_driver';
+  const cf = booking.customFeatures;
+
   const categoryLabel = formatCategoryLabel(
     booking.packageSnapshot?.category || (booking as any).category
   );
   const tierLabel = formatTierLabel(
     booking.packageSnapshot?.tier || (booking as any).tier
   );
-  const packageTitle =
-    booking.packageSnapshot?.title || booking.packageTitle || 'Hill-Station Tour';
+  const packageTitle = isVehicleRentalOnly
+    ? 'Vehicle Rental Only (with Driver)'
+    : booking.packageSnapshot?.title || booking.packageTitle || 'Hill-Station Tour';
 
   const priceFormatted = Number(booking.totalPrice || 0).toLocaleString('en-IN');
 
   const lines = [
-    '🌿 New Booking – Hills Angel Tours and Travels',
+    isVehicleRentalOnly
+      ? '🚗 Vehicle Rental Booking – Hills Angel Tours'
+      : '🌿 Tour Package Booking – Hills Angel Tours',
     `Booking ID: ${booking.bookingId || 'PENDING'}`,
-    `Name: ${booking.customerName || ''}`,
+    `Customer: ${booking.customerName || ''}`,
     `Phone: ${booking.phone || ''}`,
-    `Package: ${packageTitle}`,
-    `Category: ${categoryLabel}`,
-    `Tier: ${tierLabel}`,
-    `Travel Date: ${travelDateFormatted}`,
-    `Persons: ${booking.persons || 1}`,
-    `Pickup: ${booking.pickupLocation || ''}`,
+    `Booking Type: ${isVehicleRentalOnly ? '🚗 Vehicle Only (with Driver)' : '🌿 Tour Package Plan'}`,
+    `Plan/Package: ${packageTitle}`,
   ];
+
+  if (!isVehicleRentalOnly && (categoryLabel || tierLabel)) {
+    lines.push(`Category/Tier: ${categoryLabel} (${tierLabel})`);
+  }
+
+  lines.push(`Travel Date: ${travelDateFormatted}`);
+  lines.push(`Travellers: ${booking.persons || 1} Person(s)`);
+  lines.push(`Pickup Point: ${booking.pickupLocation || 'Office / Collection Depot'}`);
+
+  // Destination / Route details
+  if (isVehicleRentalOnly) {
+    const dest = cf?.destinationDetails || 'Open Route / Directed by Customer on Trip';
+    lines.push(`Destination: ${dest}`);
+  }
+
+  // Plan Customizations breakdown
+  if (cf) {
+    lines.push('--- Plan Customizations ---');
+    lines.push(`🍽️ Food: ${cf.foodIncluded ? 'Included (Hill-style Meals)' : 'Not Included / Self-Dining (Food Vena)'}`);
+    lines.push(`🏡 Stay: ${cf.stayIncluded ? 'Included (Resort/Camp)' : 'Not Included (Vehicle Only)'}`);
+    if (cf.campfireIncluded) {
+      lines.push('🔥 Campfire & BBQ: Included (+₹800)');
+    }
+    if (cf.photographyIncluded) {
+      lines.push('📸 GoPro 5K Kit: Included (+₹1,200)');
+    }
+    lines.push('🪪 Chauffeur: Dedicated Hill Driver Included');
+  }
 
   if (booking.transportVehicle?.name) {
     const vPrice = Number(booking.transportVehicle.price || 0);
-    lines.push(`Transport Vehicle: ${booking.transportVehicle.name}${vPrice > 0 ? ` (+₹${vPrice.toLocaleString('en-IN')})` : ' (Included)'}`);
+    lines.push(`🚙 Vehicle: ${booking.transportVehicle.name}${vPrice > 0 ? ` (+₹${vPrice.toLocaleString('en-IN')})` : ''}`);
   }
 
   if (booking.rentalAssets && booking.rentalAssets.length > 0) {
@@ -59,11 +89,11 @@ export function buildBookingWhatsAppMessage(booking: Partial<IBooking> & { packa
     lines.push(`Rental Assets: ${assetsText}`);
   }
 
-  lines.push(`Total Price: ₹${priceFormatted}`);
+  lines.push(`Total Estimated Price: ₹${priceFormatted}`);
 
   const notes = booking.specialRequests || booking.notes;
   if (notes && notes.trim()) {
-    lines.push(`Notes: ${notes.trim()}`);
+    lines.push(`Notes/Requests: ${notes.trim()}`);
   }
 
   return lines.join('\n');

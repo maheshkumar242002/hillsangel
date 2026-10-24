@@ -5,6 +5,7 @@ import { Toaster } from 'react-hot-toast';
 import Navbar from './components/common/Navbar';
 import Footer from './components/common/Footer';
 import WhatsAppFloating from './components/common/WhatsAppFloating';
+import ErrorBoundary from './components/common/ErrorBoundary';
 
 // Code-split routes with React.lazy
 const Home = lazy(() => import('./pages/Home'));
@@ -26,6 +27,14 @@ const AdminEnquiries = lazy(() => import('./pages/admin/AdminEnquiries'));
 const AdminSettings = lazy(() => import('./pages/admin/AdminSettings'));
 const AdminAssets = lazy(() => import('./pages/admin/AdminAssets'));
 const AdminGallery = lazy(() => import('./pages/admin/AdminGallery'));
+const AdminLiveGps = lazy(() => import('./pages/admin/AdminLiveGps'));
+const AdminPartners = lazy(() => import('./pages/admin/AdminPartners'));
+const AdminCompanyPartners = lazy(() => import('./pages/admin/AdminCompanyPartners'));
+const AdminVehicles = lazy(() => import('./pages/admin/AdminVehicles'));
+const AdminDrivers = lazy(() => import('./pages/admin/AdminDrivers'));
+const AdminCottages = lazy(() => import('./pages/admin/AdminCottages'));
+const AdminRestaurants = lazy(() => import('./pages/admin/AdminRestaurants'));
+
 
 function RouteLoader(): React.ReactElement {
   return (
@@ -60,35 +69,45 @@ export default function App(): React.ReactElement {
 
       {/* Main Routes */}
       <div className="flex-1 flex flex-col">
-        <Suspense fallback={<RouteLoader />}>
-          <Routes>
-            {/* Public Routes */}
-            <Route path="/" element={<Home />} />
-            <Route path="/packages" element={<Packages />} />
-            <Route path="/packages/:slug" element={<PackageDetails />} />
-            <Route path="/about" element={<AboutUs />} />
-            <Route path="/gallery" element={<GalleryPage />} />
-            <Route path="/contact" element={<Contact />} />
-            <Route path="/booking-success" element={<BookingSuccess />} />
+        <ErrorBoundary>
+          <Suspense fallback={<RouteLoader />}>
+            <Routes>
+              {/* Public Routes */}
+              <Route path="/" element={<Home />} />
+              <Route path="/packages" element={<Packages />} />
+              <Route path="/packages/:slug" element={<PackageDetails />} />
+              <Route path="/about" element={<AboutUs />} />
+              <Route path="/gallery" element={<GalleryPage />} />
+              <Route path="/contact" element={<Contact />} />
+              <Route path="/booking-success" element={<BookingSuccess />} />
 
-            {/* Admin Authentication */}
-            <Route path="/admin/login" element={<AdminLogin />} />
+              {/* Admin Authentication */}
+              <Route path="/admin/login" element={<AdminLogin />} />
 
-            {/* Admin Protected Console */}
-            <Route path="/admin" element={<AdminLayout />}>
-              <Route index element={<AdminDashboard />} />
-              <Route path="packages" element={<AdminPackages />} />
-              <Route path="bookings" element={<AdminBookings />} />
-              <Route path="assets" element={<AdminAssets />} />
-              <Route path="gallery" element={<AdminGallery />} />
-              <Route path="enquiries" element={<AdminEnquiries />} />
-              <Route path="settings" element={<AdminSettings />} />
-            </Route>
+              {/* Admin Protected Console */}
+              <Route path="/admin" element={<AdminLayout />}>
+                <Route index element={<AdminDashboard />} />
+                <Route path="packages" element={<AdminPackages />} />
+                <Route path="bookings" element={<AdminBookings />} />
+                <Route path="vehicles" element={<AdminVehicles />} />
+                <Route path="drivers" element={<AdminDrivers />} />
+                <Route path="cottages" element={<AdminCottages />} />
+                <Route path="restaurants" element={<AdminRestaurants />} />
+                <Route path="tracking" element={<AdminLiveGps />} />
 
-            {/* 404 Catch-All */}
-            <Route path="*" element={<NotFound />} />
-          </Routes>
-        </Suspense>
+                <Route path="assets" element={<AdminAssets />} />
+                <Route path="partners" element={<AdminPartners />} />
+                <Route path="company-partners" element={<AdminCompanyPartners />} />
+                <Route path="gallery" element={<AdminGallery />} />
+                <Route path="enquiries" element={<AdminEnquiries />} />
+                <Route path="settings" element={<AdminSettings />} />
+              </Route>
+
+              {/* 404 Catch-All */}
+              <Route path="*" element={<NotFound />} />
+            </Routes>
+          </Suspense>
+        </ErrorBoundary>
       </div>
 
       {/* Public Floating WhatsApp Button & Footer */}

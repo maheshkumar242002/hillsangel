@@ -13,7 +13,7 @@ const defaultSettings: ISettings = {
   whatsappNumber: '918111039182',
   contactPhone: '+91 81110 39182',
   contactEmail: 'info@hillsangels.com',
-  address: 'Near Valley View Point, Ooty - Kotagiri Road, The Nilgiris, Tamil Nadu - 643001',
+  address: 'Perur, Coimbatore South, Coimbatore, Tamil Nadu - 641026',
   hero: {
     title: 'Discover the Mist-Clad Peaks of South India',
     subtitle:

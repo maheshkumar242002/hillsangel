@@ -8,10 +8,17 @@ import {
   Boxes,
   Film,
   Settings,
+  Navigation,
+  Building2,
+  Users,
   ExternalLink,
   LogOut,
   X,
   LucideIcon,
+  Car,
+  Home,
+  UtensilsCrossed,
+  Calculator,
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 
@@ -25,7 +32,57 @@ interface NavItem {
   path: string;
   icon: LucideIcon;
   exact?: boolean;
+  badge?: string;
+  badgeColor?: string;
 }
+
+interface NavSection {
+  title: string;
+  items: NavItem[];
+}
+
+const navSections: NavSection[] = [
+  {
+    title: 'OPERATIONS',
+    items: [
+      { name: 'Dashboard', path: '/admin', icon: LayoutDashboard, exact: true },
+      { name: 'Tour Packages', path: '/admin/packages', icon: Compass },
+      { name: 'Bookings', path: '/admin/bookings', icon: CalendarCheck },
+      { name: 'Enquiries', path: '/admin/enquiries', icon: MessageSquare },
+    ],
+  },
+  {
+    title: 'FLEET & SAFARI',
+    items: [
+      { name: 'Vehicle Master', path: '/admin/vehicles', icon: Car },
+      { name: 'Mountain Pilots', path: '/admin/drivers', icon: Users },
+      {
+        name: 'Live GPS Fleet',
+        path: '/admin/tracking',
+        icon: Navigation,
+        badge: 'LIVE',
+        badgeColor: 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30',
+      },
+      { name: 'Assets & Gear', path: '/admin/assets', icon: Boxes },
+    ],
+  },
+  {
+    title: 'STAYS & DINING',
+    items: [
+      { name: 'Cottages & Stays', path: '/admin/cottages', icon: Home },
+      { name: 'Restaurants & Food', path: '/admin/restaurants', icon: UtensilsCrossed },
+      { name: 'Tie-up Settlements', path: '/admin/partners', icon: Calculator },
+    ],
+  },
+  {
+    title: 'MANAGEMENT',
+    items: [
+      { name: 'Company Partners', path: '/admin/company-partners', icon: Building2 },
+      { name: 'Gallery Media', path: '/admin/gallery', icon: Film },
+      { name: 'Platform Settings', path: '/admin/settings', icon: Settings },
+    ],
+  },
+];
 
 export const AdminSidebar: React.FC<AdminSidebarProps> = ({ isOpen, onClose }) => {
   const { logout, admin } = useAuth();
@@ -36,112 +93,129 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({ isOpen, onClose }) =
     navigate('/admin/login');
   };
 
-  const navItems: NavItem[] = [
-    { name: 'Dashboard', path: '/admin', icon: LayoutDashboard, exact: true },
-    { name: 'Packages', path: '/admin/packages', icon: Compass },
-    { name: 'Bookings', path: '/admin/bookings', icon: CalendarCheck },
-    { name: 'Assets & Fleet', path: '/admin/assets', icon: Boxes },
-    { name: 'Gallery Media', path: '/admin/gallery', icon: Film },
-    { name: 'Enquiries', path: '/admin/enquiries', icon: MessageSquare },
-    { name: 'Settings', path: '/admin/settings', icon: Settings },
-  ];
-
   const sidebarContent = (
-    <div className="flex flex-col h-full justify-between bg-[#192D20] text-white p-5 border-r border-[#2C4834]">
-      <div>
-        {/* Brand Header */}
-        <div className="flex items-center justify-between pb-6 border-b border-white/10">
-          <div className="flex items-center gap-2.5">
-            <div className="w-9 h-9 rounded-xl bg-gradient-to-r from-emerald-500 to-primary flex items-center justify-center text-white shadow-sm">
-              <Compass className="w-5 h-5 text-accent-light" />
+    <div className="flex flex-col h-full bg-[#142318] text-white border-r border-[#223928] overflow-hidden select-none">
+      {/* Brand Header */}
+      <div className="p-4 px-5 border-b border-white/8 shrink-0 bg-[#111e15]">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-700 flex items-center justify-center text-white shadow-sm ring-1 ring-white/10 shrink-0">
+              <Compass className="w-5 h-5 text-emerald-200" />
             </div>
             <div>
-              <span className="font-serif font-bold text-base block leading-tight">
+              <span className="font-serif font-bold text-base block leading-tight text-white tracking-wide">
                 Hills Angel
               </span>
-              <span className="text-[10px] uppercase tracking-wider text-accent block">
+              <span className="text-[10px] uppercase tracking-wider text-emerald-400 font-semibold block mt-0.5">
                 Admin Console
               </span>
             </div>
           </div>
 
-          {/* Close button on mobile */}
           {onClose && (
             <button
               type="button"
               onClick={onClose}
-              className="md:hidden p-2 rounded-lg text-gray-400 hover:text-white"
+              className="md:hidden p-1.5 rounded-lg text-gray-400 hover:text-white hover:bg-white/10"
               aria-label="Close admin menu"
             >
               <X className="w-5 h-5" />
             </button>
           )}
         </div>
-
-        {/* Navigation Items */}
-        <nav className="mt-6 space-y-1.5">
-          {navItems.map((item) => {
-            const Icon = item.icon;
-            return (
-              <NavLink
-                key={item.path}
-                to={item.path}
-                end={item.exact}
-                onClick={onClose}
-                className={({ isActive }) =>
-                  `flex items-center gap-3 px-3.5 py-3 rounded-xl text-xs sm:text-sm font-medium transition-all ${
-                    isActive
-                      ? 'bg-primary text-white shadow-elaichi font-semibold'
-                      : 'text-gray-300 hover:bg-white/5 hover:text-white'
-                  }`
-                }
-              >
-                <Icon className="w-4 h-4 shrink-0 text-accent-light" />
-                <span>{item.name}</span>
-              </NavLink>
-            );
-          })}
-        </nav>
       </div>
 
-      {/* Footer Profile & Logout */}
-      <div className="pt-6 border-t border-white/10 space-y-3 pb-safe">
+      {/* Grouped Scrollable Navigation */}
+      <div className="flex-1 overflow-y-auto min-h-0 px-3 py-3 sidebar-scroll space-y-4">
+        {navSections.map((section) => (
+          <div key={section.title} className="space-y-1">
+            <div className="px-3 py-1 text-[10px] font-bold text-emerald-400/70 tracking-widest uppercase">
+              {section.title}
+            </div>
+
+            <nav className="space-y-0.5">
+              {section.items.map((item) => {
+                const Icon = item.icon;
+                return (
+                  <NavLink
+                    key={item.path}
+                    to={item.path}
+                    end={item.exact}
+                    onClick={onClose}
+                    className={({ isActive }) =>
+                      `flex items-center justify-between px-3 py-2 rounded-xl text-xs font-medium transition-all group ${
+                        isActive
+                          ? 'bg-emerald-600 text-white font-semibold shadow-xs ring-1 ring-emerald-400/40'
+                          : 'text-gray-300 hover:bg-white/6 hover:text-white'
+                      }`
+                    }
+                  >
+                    <div className="flex items-center gap-2.5 min-w-0">
+                      <Icon className="w-4 h-4 shrink-0 text-emerald-300 group-hover:scale-105 transition-transform" />
+                      <span className="truncate">{item.name}</span>
+                    </div>
+
+                    {item.badge && (
+                      <span
+                        className={`text-[9px] font-bold px-1.5 py-0.2 rounded border uppercase tracking-wider flex items-center gap-1 ${
+                          item.badgeColor || 'bg-white/10 text-white'
+                        }`}
+                      >
+                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                        {item.badge}
+                      </span>
+                    )}
+                  </NavLink>
+                );
+              })}
+            </nav>
+          </div>
+        ))}
+      </div>
+
+      {/* Pinned Sticky Bottom Profile */}
+      <div className="p-3.5 border-t border-white/8 shrink-0 bg-[#0f1b13] space-y-2 pb-safe">
         <Link
           to="/"
           target="_blank"
           rel="noopener noreferrer"
-          className="flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs text-gray-300 hover:bg-white/5 hover:text-white transition-colors"
+          className="flex items-center justify-between px-3 py-2 rounded-xl text-xs text-gray-300 hover:bg-white/6 hover:text-white transition-colors"
         >
           <span className="flex items-center gap-2">
-            <ExternalLink className="w-3.5 h-3.5 text-accent" />
+            <ExternalLink className="w-3.5 h-3.5 text-emerald-400" />
             <span>View Public Site</span>
           </span>
-          <span className="text-[10px] bg-white/10 px-2 py-0.5 rounded text-accent">Live</span>
+          <span className="text-[10px] bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 px-1.5 py-0.2 rounded font-semibold">
+            Live
+          </span>
         </Link>
 
-        <div className="px-3.5 py-2">
-          <p className="text-xs font-semibold text-white truncate">{admin?.name || 'Administrator'}</p>
-          <p className="text-[11px] text-gray-400 truncate">{admin?.email}</p>
-        </div>
+        <div className="flex items-center justify-between px-3 py-2 rounded-xl bg-white/4 border border-white/6">
+          <div className="min-w-0 flex-1 pr-2">
+            <p className="text-xs font-semibold text-white truncate">{admin?.name || 'Administrator'}</p>
+            <p className="text-[10px] text-gray-400 truncate">{admin?.email || 'admin@hillsangels.com'}</p>
+          </div>
 
-        <button
-          type="button"
-          onClick={handleLogout}
-          className="w-full flex items-center gap-2 px-3.5 py-2.5 rounded-xl text-xs font-semibold text-rose-300 hover:bg-rose-950/40 hover:text-rose-200 transition-colors min-h-[44px]"
-        >
-          <LogOut className="w-4 h-4" />
-          <span>Sign Out</span>
-        </button>
+          <button
+            type="button"
+            onClick={handleLogout}
+            title="Sign Out"
+            className="p-1.5 rounded-lg text-rose-300 hover:text-rose-200 hover:bg-rose-500/20 transition-colors shrink-0"
+          >
+            <LogOut className="w-4 h-4" />
+          </button>
+        </div>
       </div>
     </div>
   );
 
   return (
     <>
-      {/* Desktop Persistent Sidebar */}
-      <aside className="hidden md:flex md:w-64 md:flex-col md:fixed md:inset-y-0 z-30">
+      {/* Desktop Persistent Sidebar - Natural Flex Sibling */}
+      <aside className="hidden md:flex md:w-64 md:shrink-0 md:flex-col h-full z-30">
         {sidebarContent}
       </aside>
+
 
       {/* Mobile Drawer */}
       {isOpen && (
@@ -151,7 +225,7 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({ isOpen, onClose }) =
             onClick={onClose}
             aria-hidden="true"
           />
-          <div className="relative w-72 max-w-xs h-full bg-[#192D20] shadow-2xl flex flex-col z-10 animate-in slide-in-from-left duration-200">
+          <div className="relative w-72 max-w-xs h-full bg-[#142318] shadow-2xl flex flex-col z-10 animate-in slide-in-from-left duration-200">
             {sidebarContent}
           </div>
         </div>

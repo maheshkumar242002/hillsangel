@@ -52,7 +52,7 @@ export const PackageCard: React.FC<PackageCardProps> = ({ pkg, onBookNow }) => {
           </span>
           <span className="inline-flex items-center gap-1 bg-black/40 backdrop-blur-md px-2.5 py-1 rounded-lg">
             <Clock className="w-3.5 h-3.5 text-accent" />
-            {pkg.duration?.days || 3}D / {pkg.duration?.nights || 2}N
+            {pkg.duration?.nights ? `${pkg.duration.days}D / ${pkg.duration.nights}N` : `${pkg.duration?.days || 1} Day Safari`}
           </span>
         </div>
       </div>
@@ -69,15 +69,11 @@ export const PackageCard: React.FC<PackageCardProps> = ({ pkg, onBookNow }) => {
             </h3>
           </Link>
 
-          {/* Stranger Seat Counter Alert */}
-          {isStranger && (
-            <div className="flex items-center gap-1.5 text-xs font-medium text-amber-700 bg-amber-50 px-2.5 py-1 rounded-lg w-fit">
-              <Users className="w-3.5 h-3.5" />
-              <span>
-                {seatsLeft > 0 ? `${seatsLeft} seats left for next trail` : 'Batch Full'}
-              </span>
-            </div>
-          )}
+          {/* Jeep Capacity Badge */}
+          <div className="flex items-center gap-1.5 text-xs font-medium text-emerald-800 bg-emerald-50 px-2.5 py-1 rounded-lg w-fit">
+            <Users className="w-3.5 h-3.5" />
+            <span>Up to {pkg.maxSeats || 6} Persons / 4x4 Jeep</span>
+          </div>
 
           {/* Highlights summary */}
           {pkg.highlights && pkg.highlights.length > 0 && (
@@ -106,7 +102,7 @@ export const PackageCard: React.FC<PackageCardProps> = ({ pkg, onBookNow }) => {
               )}
             </div>
             <span className="text-[11px] text-muted block capitalize">
-              {pkg.priceUnit || (isStranger ? 'per person' : 'per couple')}
+              {pkg.priceUnit || 'per jeep'}
             </span>
           </div>
 

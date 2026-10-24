@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
-import { Compass, RotateCcw, AlertCircle } from 'lucide-react';
+import { Compass, RotateCcw, AlertCircle, Car, Sparkles } from 'lucide-react';
 import { getPackages } from '../api/packages';
 import PackageCard from '../components/packages/PackageCard';
 import FilterSheet, { FilterState } from '../components/packages/FilterSheet';
@@ -57,13 +57,15 @@ export default function Packages(): React.ReactElement {
         };
 
         const res = await getPackages(queryParams);
-        if (res.success) {
+        if (res && res.success) {
           setPackages(res.packages || []);
           setTotalCount(res.total || 0);
           setTotalPages(res.totalPages || 1);
+        } else {
+          setPackages([]);
         }
-      } catch (err) {
-        console.error('Failed to load packages:', err);
+      } catch (err: any) {
+        setPackages([]);
       } finally {
         setLoading(false);
       }
@@ -96,29 +98,49 @@ export default function Packages(): React.ReactElement {
     setBookingModalOpen(true);
   };
 
+  const openDirectVehicleRental = (): void => {
+    setSelectedBookingPkg(packages[0] || null);
+    setBookingModalOpen(true);
+  };
+
   return (
     <>
       <Helmet>
-        <title>Tour Packages | Hills Angel Tours and Travels</title>
+        <title>Jeep Safari Packages & Vehicle Rentals | Hills Angel Tours</title>
         <meta
           name="description"
-          content="Explore Ooty, Munnar, and Kodaikanal packages. Choose between Couple and Stranger categories, and Premium or Extra-Premium luxury."
+          content="Explore Munnar and hill corridors with Hills Angel. Tour packages and private vehicle rentals with dedicated mountain driver."
         />
       </Helmet>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12 space-y-8">
         {/* Page Header */}
-        <div className="space-y-2">
-          <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-primary">
-            <Compass className="w-4 h-4" />
-            <span>Hill-Station Catalog</span>
+        <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
+          <div className="space-y-2">
+            <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-primary">
+              <Compass className="w-4 h-4" />
+              <span>Tour Packages & Private Rentals</span>
+            </div>
+            <h1 className="text-3xl sm:text-4xl font-bold text-text">
+              Explore Hill Tours & Vehicle Hire
+            </h1>
+            <p className="text-xs sm:text-sm text-muted max-w-2xl">
+              Choose a complete tour package or rent a private 4x4 / car with driver only. Customize inclusions (food, stay, campfire, photography) according to your preferences.
+            </p>
           </div>
-          <h1 className="text-3xl sm:text-4xl font-bold text-text">
-            Explore Hill Station Packages
-          </h1>
-          <p className="text-xs sm:text-sm text-muted max-w-2xl">
-            Choose by traveler type (romantic Couple retreat or social Stranger group trail) and comfort tier (Premium 3★ or Extra Premium 5★ luxury villa).
-          </p>
+
+          {/* Quick Vehicle Rent with Driver Button */}
+          <button
+            type="button"
+            onClick={openDirectVehicleRental}
+            className="inline-flex items-center gap-2.5 px-5 py-3 rounded-2xl bg-emerald-700 text-white font-bold text-xs shadow-md hover:bg-emerald-800 active:scale-95 transition-all shrink-0"
+          >
+            <Car className="w-4 h-4 text-emerald-300" />
+            <div className="text-left">
+              <span className="block leading-tight">Rent Vehicle Only (with Driver)</span>
+              <span className="text-[10px] text-emerald-200 block font-normal">Flexible route • No fixed tour</span>
+            </div>
+          </button>
         </div>
 
         {/* Filter Controls (Desktop Pills + Mobile Bottom Sheet Drawer) */}
@@ -129,7 +151,7 @@ export default function Packages(): React.ReactElement {
           totalResults={totalCount}
         />
 
-        {/* Packages Grid or Empty State */}
+        {/* Packages Grid or Not Found State */}
         {loading ? (
           <PackageGridSkeleton count={6} />
         ) : packages.length === 0 ? (
@@ -138,10 +160,10 @@ export default function Packages(): React.ReactElement {
               <AlertCircle className="w-8 h-8" />
             </div>
             <h3 className="font-serif text-xl font-bold text-text">
-              No matching packages found
+              No packages found
             </h3>
             <p className="text-xs sm:text-sm text-muted">
-              We couldn't find any packages matching your current filter criteria. Try adjusting the destination, category, or tier.
+              We couldn't find any packages at the moment. Please try adjusting your filters or search.
             </p>
             <button
               type="button"

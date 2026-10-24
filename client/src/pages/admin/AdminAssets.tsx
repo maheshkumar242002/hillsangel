@@ -16,10 +16,12 @@ import {
   Loader2,
   CheckCircle2,
   AlertCircle,
-  UploadCloud,
   TrendingUp,
   Tag,
+  Navigation,
+  UploadCloud,
 } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import {
   getAssets,
@@ -488,23 +490,38 @@ export default function AdminAssets(): React.ReactElement {
               </div>
 
               {/* Action Buttons */}
-              <div className="p-3 bg-gray-50 border-t border-gray-100 flex items-center justify-end gap-2">
-                <button
-                  type="button"
-                  onClick={() => handleOpenEditModal(asset)}
-                  className="p-1.5 text-gray-600 hover:text-primary hover:bg-white rounded-lg transition-colors"
-                  title="Edit Asset"
-                >
-                  <Edit2 className="w-4 h-4" />
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setDeleteConfirmId(asset._id)}
-                  className="p-1.5 text-gray-400 hover:text-rose-600 hover:bg-white rounded-lg transition-colors"
-                  title="Delete Asset"
-                >
-                  <Trash2 className="w-4 h-4" />
-                </button>
+              <div className="p-3 bg-gray-50 border-t border-gray-100 flex items-center justify-between gap-2">
+                {asset.category === 'vehicle' ? (
+                  <Link
+                    to="/admin/tracking"
+                    className="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-bold text-emerald-800 bg-emerald-100 hover:bg-emerald-200 rounded-lg transition-colors"
+                    title="Open Live GPS Tracking Map"
+                  >
+                    <Navigation className="w-3.5 h-3.5 text-emerald-700" />
+                    <span>Live GPS</span>
+                  </Link>
+                ) : (
+                  <div />
+                )}
+
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => handleOpenEditModal(asset)}
+                    className="p-1.5 text-gray-600 hover:text-primary hover:bg-white rounded-lg transition-colors"
+                    title="Edit Asset"
+                  >
+                    <Edit2 className="w-4 h-4" />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setDeleteConfirmId(asset._id)}
+                    className="p-1.5 text-gray-400 hover:text-rose-600 hover:bg-white rounded-lg transition-colors"
+                    title="Delete Asset"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </button>
+                </div>
               </div>
             </div>
           ))}

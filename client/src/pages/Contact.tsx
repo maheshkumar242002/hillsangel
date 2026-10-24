@@ -240,19 +240,29 @@ export default function Contact(): React.ReactElement {
             )}
           </div>
 
-          {/* Contact Information & Map Embed Placeholder */}
+          {/* Contact Information & Map Embed */}
           <div className="space-y-6">
             <div className="bg-white rounded-3xl border border-gray-100 p-6 sm:p-8 shadow-sm space-y-6">
               <h3 className="font-serif text-xl font-bold text-text">
-                Office & Coordinator Desks
+                Office & Vehicle Collection Point
               </h3>
 
               <div className="space-y-4 text-xs sm:text-sm text-gray-700">
                 <div className="flex items-start gap-3">
                   <MapPin className="w-5 h-5 text-primary shrink-0 mt-0.5" />
                   <div>
-                    <span className="font-bold text-text block">Headquarters:</span>
+                    <span className="font-bold text-text block">Office & Vehicle Pickup Location:</span>
                     <span>{settings.address}</span>
+                    <div className="mt-2">
+                      <a
+                        href="https://maps.app.goo.gl/NMojzWSiK3qqvGoJA"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-1.5 text-xs font-semibold text-primary hover:underline"
+                      >
+                        <span>Open in Google Maps ↗</span>
+                      </a>
+                    </div>
                   </div>
                 </div>
 
@@ -277,12 +287,24 @@ export default function Contact(): React.ReactElement {
             {/* Google Map Embed */}
             <div className="bg-white rounded-3xl border border-gray-100 overflow-hidden shadow-sm aspect-[16/9] relative">
               <iframe
-                title="Hills Angel Tours Location"
-                src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d62551.48869151528!2d76.66699327827253!3d11.411854497673554!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x3ba8bd84b5f3d78d%3A0x179bdb14c93e3f42!2sOoty%2C%20Tamil%20Nadu!5e0!3m2!1sen!2sin!4v1700000000000!5m2!1sen!2sin"
+                title="Office & Vehicle Collection Location"
+                src="https://maps.google.com/maps?q=10.9820004,76.9334183&hl=en&z=17&output=embed"
                 className="w-full h-full border-0"
                 loading="lazy"
                 referrerPolicy="no-referrer-when-downgrade"
               />
+            </div>
+
+            <div className="text-center">
+              <a
+                href="https://maps.app.goo.gl/NMojzWSiK3qqvGoJA"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center justify-center gap-2 w-full py-3 px-5 rounded-2xl bg-primary text-white text-xs sm:text-sm font-semibold shadow hover:bg-primary-dark active:scale-98 transition-all min-h-[46px]"
+              >
+                <MapPin className="w-4 h-4" />
+                <span>Navigate to Office / Vehicle Collection Point</span>
+              </a>
             </div>
           </div>
         </div>

@@ -23,23 +23,33 @@ export default function AdminLayout(): React.ReactElement {
 
   // Derive title from current path
   const getPageTitle = (pathname: string): string => {
+    if (pathname.includes('/tracking')) return 'Live Vehicle GPS Fleet Tracking';
+    if (pathname.includes('/drivers')) return 'Mountain Chauffeur & Driver Master';
+    if (pathname.includes('/vehicles')) return 'Vehicle Master & Fleet Management';
+    if (pathname.includes('/cottages')) return 'Cottage & Resort Master';
+    if (pathname.includes('/restaurants')) return 'Restaurant & Dining Master';
     if (pathname.includes('/packages')) return 'Packages Management';
     if (pathname.includes('/bookings')) return 'Bookings Management';
     if (pathname.includes('/enquiries')) return 'Customer Enquiries';
+    if (pathname.includes('/assets')) return 'Assets & Fleet Management';
+    if (pathname.includes('/partners')) return 'Partner Tie-ups & Settlements';
+    if (pathname.includes('/company-partners')) return 'Company Partners & Profit Sharing';
+    if (pathname.includes('/gallery')) return 'Gallery Management';
     if (pathname.includes('/settings')) return 'Platform Settings';
     return 'Executive Dashboard';
   };
 
+
   return (
-    <div className="min-h-screen bg-[#F6FAF6] flex">
+    <div className="h-screen w-screen bg-[#F6FAF6] flex overflow-hidden">
       {/* Sidebar (Desktop persistent + Mobile drawer) */}
       <AdminSidebar
         isOpen={mobileSidebarOpen}
         onClose={() => setMobileSidebarOpen(false)}
       />
 
-      {/* Main Workspace (md:pl-64) */}
-      <div className="flex-1 flex flex-col md:pl-64 min-w-0">
+      {/* Main Workspace (Independent Scroll, Zero Overlap) */}
+      <div className="flex-1 flex flex-col min-w-0 h-full overflow-y-auto">
         <AdminTopBar
           onMenuClick={() => setMobileSidebarOpen(true)}
           title={getPageTitle(location.pathname)}
@@ -52,3 +62,4 @@ export default function AdminLayout(): React.ReactElement {
     </div>
   );
 }
+

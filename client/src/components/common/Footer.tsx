@@ -65,7 +65,7 @@ export const Footer: React.FC = () => {
               </div>
             </div>
             <p className="text-xs text-gray-300 leading-relaxed">
-              Your gateway to the Western Ghats & Nilgiris. We specialize in intimate couple getaways and vibrant social group trails for solo explorers.
+              Explore Nature and Feel Alive with El Shaddai Jeep Safari Munnar. Special 4x4 safaris for Family Trips and Friends Trips across all 5 directions.
             </p>
             <div className="flex items-center gap-3 pt-1">
               <a
@@ -120,13 +120,13 @@ export const Footer: React.FC = () => {
                 </Link>
               </li>
               <li>
-                <Link to="/packages?category=couple" className="hover:text-accent transition-colors block py-1">
-                  Couple Honeymoon Packages
+                <Link to="/packages?category=family" className="hover:text-accent transition-colors block py-1">
+                  Family Trip Safari Packages
                 </Link>
               </li>
               <li>
-                <Link to="/packages?category=stranger" className="hover:text-accent transition-colors block py-1">
-                  Stranger Solo Group Trails
+                <Link to="/packages?category=friends" className="hover:text-accent transition-colors block py-1">
+                  Friends Trip Adventure Trails
                 </Link>
               </li>
             </ul>
@@ -178,7 +178,20 @@ export const Footer: React.FC = () => {
             </h4>
             <div className="flex items-start gap-2.5 text-xs text-gray-300">
               <MapPin className="w-4 h-4 text-accent shrink-0 mt-0.5" />
-              <span>{settings.address}</span>
+              <div>
+                <a
+                  href="https://maps.app.goo.gl/NMojzWSiK3qqvGoJA"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="hover:text-accent transition-colors block"
+                  title="View vehicle collection point on Google Maps"
+                >
+                  {settings.address}
+                </a>
+                <span className="text-[11px] text-accent/80 block mt-0.5 font-medium">
+                  📍 Vehicle Collection & Office Point ↗
+                </span>
+              </div>
             </div>
             <div className="flex items-center gap-2.5 text-xs text-gray-300">
               <Phone className="w-4 h-4 text-accent shrink-0" />

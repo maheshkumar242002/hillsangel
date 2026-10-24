@@ -100,21 +100,20 @@ export default function PackageDetails(): React.ReactElement {
     );
   }
 
-  const isStranger = pkg.category === 'stranger';
-  const seatsLeft = pkg.seatsLeft !== undefined ? pkg.seatsLeft : Math.max(0, (pkg.maxSeats || 14) - (pkg.seatsBooked || 0));
+  const seatsLeft = pkg.seatsLeft !== undefined ? pkg.seatsLeft : Math.max(0, (pkg.maxSeats || 6) - (pkg.seatsBooked || 0));
 
   const whatsappDirect = getWhatsAppUrl(
     settings.whatsappNumber,
-    `🌿 Hello Hills Angel Tours! I am interested in booking "${pkg.title}" (${formatINR(pkg.price)}). Can you share available departure slots?`
+    `🌿 Hello El Shaddai Jeep Safari! I am interested in booking "${pkg.title}" (${formatINR(pkg.price)}). Can you share available departure slots?`
   );
 
   return (
     <>
       <Helmet>
-        <title>{`${pkg.title} | Hills Angel Tours`}</title>
+        <title>{`${pkg.title} | El Shaddai Jeep Safari Munnar`}</title>
         <meta
           name="description"
-          content={`Book ${pkg.title} in ${pkg.destination}. ${pkg.duration?.days} Days / ${pkg.duration?.nights} Nights of breathtaking hill station experiences.`}
+          content={`Book ${pkg.title} in ${pkg.destination}. ${pkg.duration?.days || 1} Day Safari of breathtaking hill station experiences.`}
         />
       </Helmet>
 
@@ -161,16 +160,16 @@ export default function PackageDetails(): React.ReactElement {
             <span className="inline-flex items-center gap-1.5">
               <Clock className="w-4 h-4 text-primary" />
               <span>
-                {pkg.duration?.days || 3} Days / {pkg.duration?.nights || 2} Nights
+                {pkg.duration?.days === 1 && (!pkg.duration?.nights || pkg.duration?.nights === 0)
+                  ? '1 Day Safari'
+                  : `${pkg.duration?.days || 1} Days / ${pkg.duration?.nights || 0} Nights`}
               </span>
             </span>
 
-            {isStranger && (
-              <span className="inline-flex items-center gap-1.5 text-amber-700 font-semibold bg-amber-50 px-2.5 py-0.5 rounded-full border border-amber-200">
-                <Users className="w-4 h-4" />
-                <span>{seatsLeft > 0 ? `${seatsLeft} Seats Remaining` : 'Batch Full'}</span>
-              </span>
-            )}
+            <span className="inline-flex items-center gap-1.5 text-primary-dark font-semibold bg-emerald-50 px-2.5 py-0.5 rounded-full border border-emerald-200">
+              <Users className="w-4 h-4 text-primary" />
+              <span>Up to {pkg.maxSeats || 6} Persons / 4x4 Jeep</span>
+            </span>
           </div>
         </div>
 
@@ -197,6 +196,55 @@ export default function PackageDetails(): React.ReactElement {
                 </div>
               </div>
             )}
+
+            {/* Special Features & Safety Equipment Onboard Card */}
+            <div className="bg-gradient-to-br from-emerald-50 via-white to-surface rounded-3xl p-6 border border-emerald-200/80 shadow-xs space-y-4">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <h3 className="font-serif font-bold text-base text-text flex items-center gap-2">
+                  <span className="text-xl">🧰</span>
+                  <span>Onboard Special Features & Safety Kit</span>
+                </h3>
+                <span className="text-[11px] font-bold text-emerald-800 bg-emerald-100 px-2.5 py-0.5 rounded-full">
+                  Included on Every 4x4 Jeep
+                </span>
+              </div>
+              <p className="text-xs text-muted">
+                Every El Shaddai Munnar Safari is fully equipped for emergency high-altitude care and rugged mountain terrain:
+              </p>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div className="flex items-start gap-3 p-3 rounded-2xl bg-white border border-gray-100 shadow-2xs">
+                  <span className="text-2xl">🧰</span>
+                  <div>
+                    <h4 className="text-xs font-bold text-text">First-Aid Medikit</h4>
+                    <p className="text-[11px] text-muted">Motion sickness, antiseptics, bandages & pain relief sprays.</p>
+                  </div>
+                </div>
+
+                <div className="flex items-start gap-3 p-3 rounded-2xl bg-white border border-gray-100 shadow-2xs">
+                  <span className="text-2xl">🫁</span>
+                  <div>
+                    <h4 className="text-xs font-bold text-text">Emergency Oxygen (O2) Support</h4>
+                    <p className="text-[11px] text-muted">Portable breathing canister for Top Station & high mountain ridges.</p>
+                  </div>
+                </div>
+
+                <div className="flex items-start gap-3 p-3 rounded-2xl bg-white border border-gray-100 shadow-2xs">
+                  <span className="text-2xl">🚙</span>
+                  <div>
+                    <h4 className="text-xs font-bold text-text">4x4 Commander Rig (KL 68 C 3024)</h4>
+                    <p className="text-[11px] text-muted">Heavy-duty roll cage, high-clearance suspension & recovery winch.</p>
+                  </div>
+                </div>
+
+                <div className="flex items-start gap-3 p-3 rounded-2xl bg-white border border-gray-100 shadow-2xs">
+                  <span className="text-2xl">📹</span>
+                  <div>
+                    <h4 className="text-xs font-bold text-text">GoPro 4K Mounts & Drone Stops</h4>
+                    <p className="text-[11px] text-muted">Dedicated action camera mounts on roll bar & cinematic video stops.</p>
+                  </div>
+                </div>
+              </div>
+            </div>
 
             {/* Included Gear & Equipment Assets */}
             {pkg.includedAssets && pkg.includedAssets.length > 0 && (
@@ -249,7 +297,7 @@ export default function PackageDetails(): React.ReactElement {
                   )}
                 </div>
                 <span className="text-xs text-muted block capitalize">
-                  {pkg.priceUnit || (isStranger ? 'per person' : 'per couple')}
+                  {pkg.priceUnit || 'per jeep'}
                 </span>
               </div>
 
@@ -367,8 +415,8 @@ export default function PackageDetails(): React.ReactElement {
           <span className="text-lg font-bold text-primary-dark">
             {formatINR(pkg.price)}
           </span>
-          <span className="text-[10px] text-muted block">
-            {pkg.priceUnit || (isStranger ? 'per person' : 'per couple')}
+          <span className="text-[10px] text-muted block capitalize">
+            {pkg.priceUnit || 'per jeep'}
           </span>
         </div>
 

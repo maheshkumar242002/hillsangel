@@ -23,6 +23,7 @@ import {
 import { getAssets } from '../../api/assets';
 import TierBadge from '../../components/common/TierBadge';
 import CategoryChip from '../../components/common/CategoryChip';
+import { Modal, Button, Input, Select } from '../../components/common';
 import { formatINR } from '../../utils/formatters';
 import toast from 'react-hot-toast';
 import { IPackage, PackageCategory, PackageTier, PriceUnit, IAsset } from '../../types';
@@ -72,15 +73,15 @@ export default function AdminPackages(): React.ReactElement {
   // Form State
   const initialFormState: PackageFormData = {
     title: '',
-    destination: 'Ooty',
-    category: 'couple',
+    destination: 'Munnar',
+    category: 'family',
     tier: 'premium',
-    price: 15000,
-    originalPrice: 18000,
-    priceUnit: 'per couple',
-    durationDays: 3,
-    durationNights: 2,
-    maxSeats: 2,
+    price: 5000,
+    originalPrice: 6500,
+    priceUnit: 'per jeep',
+    durationDays: 1,
+    durationNights: 0,
+    maxSeats: 6,
     featured: false,
     images: [],
     includedAssets: [],
@@ -287,49 +288,44 @@ export default function AdminPackages(): React.ReactElement {
           </p>
         </div>
 
-        <button
-          type="button"
+        <Button
+          variant="primary"
           onClick={handleOpenAdd}
-          className="min-h-[44px] px-4 py-2.5 rounded-xl bg-primary hover:bg-primary-dark text-white font-semibold text-xs shadow-elaichi flex items-center justify-center gap-2 active:scale-95 transition-all"
+          leftIcon={<Plus className="w-4 h-4" />}
         >
-          <Plus className="w-4 h-4" />
-          <span>Add New Package</span>
-        </button>
+          Add New Package
+        </Button>
       </div>
 
       {/* Filter / Search Bar */}
-      <div className="flex flex-col sm:flex-row gap-3 bg-white p-4 rounded-2xl border border-gray-100 shadow-sm">
-        <div className="relative flex-1">
-          <Search className="w-4 h-4 text-muted absolute left-3.5 top-1/2 -translate-y-1/2" />
-          <input
-            type="text"
+      <div className="flex flex-col sm:flex-row gap-3 bg-white p-4 rounded-2xl border border-gray-100 shadow-sm items-center">
+        <div className="flex-1 w-full">
+          <Input
             placeholder="Search packages by title or destination..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="w-full pl-10 pr-4 py-2 rounded-xl border border-gray-200 text-xs focus:outline-none focus:ring-2 focus:ring-primary min-h-[40px]"
+            leftIcon={<Search className="w-4 h-4 text-muted" />}
           />
         </div>
 
-        <div className="flex gap-2">
-          <select
+        <div className="flex gap-2 w-full sm:w-auto">
+          <Select
             value={filterCategory}
             onChange={(e) => setFilterCategory(e.target.value)}
-            className="bg-surface border border-gray-200 rounded-xl px-3 py-2 text-xs font-medium text-text focus:outline-none min-h-[40px]"
           >
             <option value="all">All Categories</option>
-            <option value="couple">Couple</option>
-            <option value="stranger">Stranger</option>
-          </select>
+            <option value="family">Family Trip</option>
+            <option value="friends">Friends Trip</option>
+          </Select>
 
-          <select
+          <Select
             value={filterTier}
             onChange={(e) => setFilterTier(e.target.value)}
-            className="bg-surface border border-gray-200 rounded-xl px-3 py-2 text-xs font-medium text-text focus:outline-none min-h-[40px]"
           >
             <option value="all">All Tiers</option>
             <option value="premium">Premium</option>
             <option value="extra_premium">Extra Premium</option>
-          </select>
+          </Select>
         </div>
       </div>
 
@@ -395,7 +391,8 @@ export default function AdminPackages(): React.ReactElement {
 
       {/* DESKTOP TABLE VIEW (>= 768px) */}
       <div className="hidden md:block bg-white rounded-3xl border border-gray-100 shadow-sm overflow-hidden">
-        <table className="w-full text-left border-collapse text-xs">
+        <div className="overflow-x-auto w-full">
+          <table className="w-full text-left border-collapse text-xs min-w-[900px]">
           <thead>
             <tr className="border-b border-gray-100 text-muted uppercase bg-surface/50">
               <th className="py-3.5 px-4">Package</th>
@@ -464,28 +461,18 @@ export default function AdminPackages(): React.ReactElement {
             })}
           </tbody>
         </table>
+        </div>
       </div>
 
       {/* ADD / EDIT PACKAGE MODAL */}
-      {isModalOpen && (
-        <div className="fixed inset-0 z-50 overflow-y-auto bg-black/60 backdrop-blur-xs flex items-end sm:items-center justify-center p-0 sm:p-4">
-          <div className="relative w-full max-w-2xl bg-white rounded-t-3xl sm:rounded-3xl shadow-2xl z-10 max-h-[92dvh] sm:max-h-[90vh] flex flex-col overflow-hidden animate-in slide-in-from-bottom duration-200">
-            {/* Header */}
-            <div className="p-5 border-b border-gray-100 flex items-center justify-between bg-surface/50">
-              <h3 className="font-serif text-lg font-bold text-text">
-                {editingPkg ? 'Edit Tour Package' : 'Create New Tour Package'}
-              </h3>
-              <button
-                type="button"
-                onClick={() => setIsModalOpen(false)}
-                className="p-2 text-gray-400 hover:text-gray-700 min-h-[44px] min-w-[44px] flex items-center justify-center"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-
-            {/* Scrollable Form Body */}
-            <form onSubmit={handleSavePackage} className="p-6 overflow-y-auto space-y-5 text-xs pb-safe">
+      <Modal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        size="2xl"
+        title={editingPkg ? 'Edit Tour Package' : 'Create New Tour Package'}
+        subtitle="Configure tour itinerary details, comfort tier, and pricing"
+      >
+        <form onSubmit={handleSavePackage} className="space-y-5 text-xs">
               {/* Title */}
               <div>
                 <label className="block font-semibold text-text mb-1">Package Title *</label>
@@ -517,7 +504,7 @@ export default function AdminPackages(): React.ReactElement {
                 </div>
 
                 <div>
-                  <label className="block font-semibold text-text mb-1">Category (Traveller) *</label>
+                  <label className="block font-semibold text-text mb-1">Category (Safari Type) *</label>
                   <select
                     value={formData.category}
                     onChange={(e) => {
@@ -525,14 +512,14 @@ export default function AdminPackages(): React.ReactElement {
                       setFormData({
                         ...formData,
                         category: newCat,
-                        priceUnit: newCat === 'couple' ? 'per couple' : 'per person',
-                        maxSeats: newCat === 'couple' ? 2 : 14,
+                        priceUnit: 'per jeep',
+                        maxSeats: 6,
                       });
                     }}
                     className="w-full px-3 py-2 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-primary min-h-[44px]"
                   >
-                    <option value="couple">Couple Package</option>
-                    <option value="stranger">Stranger Package</option>
+                    <option value="family">Family Trip</option>
+                    <option value="friends">Friends Trip</option>
                   </select>
                 </div>
 
@@ -797,60 +784,60 @@ export default function AdminPackages(): React.ReactElement {
               </div>
 
               {/* Submit Buttons */}
-              <div className="flex items-center gap-3 pt-3 border-t border-gray-100">
-                <button
+              <div className="flex items-center justify-end gap-3 pt-4 border-t border-gray-100">
+                <Button
                   type="button"
+                  variant="secondary"
                   onClick={() => setIsModalOpen(false)}
-                  className="flex-1 min-h-[44px] px-4 rounded-xl border border-gray-200 text-xs font-semibold text-gray-700"
                 >
                   Cancel
-                </button>
-                <button
+                </Button>
+                <Button
                   type="submit"
-                  disabled={saving}
-                  className="flex-1 min-h-[44px] px-4 rounded-xl bg-primary text-white text-xs font-semibold shadow-elaichi active:scale-95 disabled:opacity-70 flex items-center justify-center gap-1.5"
+                  variant="primary"
+                  loading={saving}
+                  leftIcon={<Check className="w-4 h-4" />}
                 >
-                  {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />}
-                  <span>Save Package</span>
-                </button>
+                  Save Package
+                </Button>
               </div>
             </form>
-          </div>
-        </div>
-      )}
+      </Modal>
 
       {/* Delete Confirmation Modal */}
-      {deleteConfirmId && (
-        <div className="fixed inset-0 z-50 bg-black/60 flex items-center justify-center p-4">
-          <div className="bg-white rounded-3xl p-6 max-w-sm w-full space-y-4 shadow-xl">
-            <div className="w-12 h-12 rounded-2xl bg-rose-100 text-rose-600 flex items-center justify-center mx-auto">
-              <AlertTriangle className="w-6 h-6" />
-            </div>
-            <div className="text-center space-y-1">
-              <h4 className="font-bold text-base text-text">Delete Tour Package?</h4>
-              <p className="text-xs text-muted">
-                Are you sure you want to permanently remove this package? Existing bookings won't be affected.
-              </p>
-            </div>
-            <div className="flex gap-2 pt-2">
-              <button
-                type="button"
-                onClick={() => setDeleteConfirmId(null)}
-                className="flex-1 min-h-[44px] rounded-xl border border-gray-200 text-xs font-semibold"
-              >
-                Cancel
-              </button>
-              <button
-                type="button"
-                onClick={handleDeletePackage}
-                className="flex-1 min-h-[44px] rounded-xl bg-rose-600 text-white text-xs font-semibold active:scale-95 transition-all"
-              >
-                Delete
-              </button>
-            </div>
+      <Modal
+        isOpen={!!deleteConfirmId}
+        onClose={() => setDeleteConfirmId(null)}
+        size="sm"
+        title="Delete Tour Package?"
+      >
+        <div className="space-y-4 pt-1">
+          <div className="w-12 h-12 rounded-2xl bg-rose-100 text-rose-600 flex items-center justify-center mx-auto">
+            <AlertTriangle className="w-6 h-6" />
+          </div>
+          <p className="text-xs text-muted text-center">
+            Are you sure you want to permanently remove this package? Existing bookings won't be affected.
+          </p>
+          <div className="flex gap-2 pt-2">
+            <Button
+              type="button"
+              variant="secondary"
+              fullWidth
+              onClick={() => setDeleteConfirmId(null)}
+            >
+              Cancel
+            </Button>
+            <Button
+              type="button"
+              variant="danger"
+              fullWidth
+              onClick={handleDeletePackage}
+            >
+              Delete
+            </Button>
           </div>
         </div>
-      )}
+      </Modal>
     </div>
   );
 }
