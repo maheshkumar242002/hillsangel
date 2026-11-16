@@ -2,32 +2,59 @@ import { Op } from 'sequelize';
 import Driver from '../models/Driver.js';
 import { processUploadedFile } from '../middleware/upload.js';
 
+const PUBLIC_DRIVER_ATTRIBUTES = [
+  'id',
+  'name',
+  'photoUrl',
+  'experienceYears',
+  'specialization',
+  'languages',
+  'rating',
+  'status',
+  'assignedVehicleReg',
+  'totalTripsCompleted',
+  'createdAt',
+];
+
 // @desc    Get all drivers with optional search & status filter
 // @route   GET /api/drivers
-// @access  Public / Admin
+// @access  Public (Sanitized) / Admin (Full details)
 export const getDrivers = async (req, res) => {
   try {
     const { status, search, sort = 'createdAt' } = req.query;
     const where = {};
+    const isAdmin = Boolean(req.admin);
 
     if (status && status !== 'all') {
       where.status = status;
     }
 
     if (search) {
-      where[Op.or] = [
+      const searchConditions = [
         { name: { [Op.like]: `%${search}%` } },
-        { phone: { [Op.like]: `%${search}%` } },
-        { licenseNumber: { [Op.like]: `%${search}%` } },
-        { badgeNumber: { [Op.like]: `%${search}%` } },
         { assignedVehicleReg: { [Op.like]: `%${search}%` } },
+        { specialization: { [Op.like]: `%${search}%` } },
       ];
+      if (isAdmin) {
+        searchConditions.push(
+          { phone: { [Op.like]: `%${search}%` } },
+          { licenseNumber: { [Op.like]: `%${search}%` } },
+          { badgeNumber: { [Op.like]: `%${search}%` } }
+        );
+      }
+      where[Op.or] = searchConditions;
     }
 
-    const drivers = await Driver.findAll({
+    const queryOptions = {
       where,
       order: [['status', 'ASC'], ['rating', 'DESC'], ['createdAt', 'DESC']],
-    });
+    };
+
+    if (!isAdmin) {
+      queryOptions.attributes = PUBLIC_DRIVER_ATTRIBUTES;
+    }
+
+    const drivers = await Driver.findAll(queryOptions);
 
     res.status(200).json({
       success: true,
@@ -46,10 +73,16 @@ export const getDrivers = async (req, res) => {
 
 // @desc    Get single driver by ID
 // @route   GET /api/drivers/:id
-// @access  Public / Admin
+// @access  Public (Sanitized) / Admin (Full details)
 export const getDriverById = async (req, res) => {
   try {
-    const driver = await Driver.findByPk(req.params.id);
+    const isAdmin = Boolean(req.admin);
+    const queryOptions = {};
+    if (!isAdmin) {
+      queryOptions.attributes = PUBLIC_DRIVER_ATTRIBUTES;
+    }
+
+    const driver = await Driver.findByPk(req.params.id, queryOptions);
     if (!driver) {
       return res.status(404).json({
         success: false,

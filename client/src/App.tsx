@@ -11,6 +11,7 @@ import ErrorBoundary from './components/common/ErrorBoundary';
 const Home = lazy(() => import('./pages/Home'));
 const Packages = lazy(() => import('./pages/Packages'));
 const PackageDetails = lazy(() => import('./pages/PackageDetails'));
+const VehicleRentals = lazy(() => import('./pages/VehicleRentals'));
 const AboutUs = lazy(() => import('./pages/AboutUs'));
 const GalleryPage = lazy(() => import('./pages/GalleryPage'));
 const Contact = lazy(() => import('./pages/Contact'));
@@ -34,6 +35,7 @@ const AdminVehicles = lazy(() => import('./pages/admin/AdminVehicles'));
 const AdminDrivers = lazy(() => import('./pages/admin/AdminDrivers'));
 const AdminCottages = lazy(() => import('./pages/admin/AdminCottages'));
 const AdminRestaurants = lazy(() => import('./pages/admin/AdminRestaurants'));
+const AdminDestinations = lazy(() => import('./pages/admin/AdminDestinations'));
 
 
 function RouteLoader(): React.ReactElement {
@@ -76,6 +78,8 @@ export default function App(): React.ReactElement {
               <Route path="/" element={<Home />} />
               <Route path="/packages" element={<Packages />} />
               <Route path="/packages/:slug" element={<PackageDetails />} />
+              <Route path="/rentals" element={<VehicleRentals />} />
+              <Route path="/vehicles" element={<VehicleRentals />} />
               <Route path="/about" element={<AboutUs />} />
               <Route path="/gallery" element={<GalleryPage />} />
               <Route path="/contact" element={<Contact />} />
@@ -87,6 +91,7 @@ export default function App(): React.ReactElement {
               {/* Admin Protected Console */}
               <Route path="/admin" element={<AdminLayout />}>
                 <Route index element={<AdminDashboard />} />
+                <Route path="destinations" element={<AdminDestinations />} />
                 <Route path="packages" element={<AdminPackages />} />
                 <Route path="bookings" element={<AdminBookings />} />
                 <Route path="vehicles" element={<AdminVehicles />} />

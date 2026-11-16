@@ -12,26 +12,32 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | null>(null);
 
 export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
-  const [admin, setAdmin] = useState<AdminUser | null>(() => {
-    const saved = localStorage.getItem('adminUser');
-    return saved ? JSON.parse(saved) : null;
-  });
+  const [admin, setAdmin] = useState<AdminUser | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
 
-  // Check auth session on initial load
+  // Check auth session on initial load against backend /api/auth/me
   useEffect(() => {
     const checkAuth = async () => {
       try {
         const token = localStorage.getItem('adminToken');
-        if (token) {
-          const res = await getAdminMe();
-          if (res.success && res.admin) {
-            setAdmin(res.admin);
-            localStorage.setItem('adminUser', JSON.stringify(res.admin));
-          }
+        // If neither token nor cookie exists, definitely unauthenticated
+        if (!token && !document.cookie.includes('adminToken')) {
+          setAdmin(null);
+          localStorage.removeItem('adminUser');
+          setLoading(false);
+          return;
+        }
+
+        const res = await getAdminMe();
+        if (res.success && res.admin && res.admin.id) {
+          setAdmin(res.admin);
+          localStorage.setItem('adminUser', JSON.stringify(res.admin));
+        } else {
+          setAdmin(null);
+          localStorage.removeItem('adminToken');
+          localStorage.removeItem('adminUser');
         }
       } catch (err) {
-        console.warn('Session verification failed, logging out.');
         localStorage.removeItem('adminToken');
         localStorage.removeItem('adminUser');
         setAdmin(null);

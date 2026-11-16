@@ -1,6 +1,7 @@
 import { Op } from 'sequelize';
 import Package from '../models/Package.js';
 import Asset from '../models/Asset.js';
+import PartnerTieup from '../models/PartnerTieup.js';
 import { processUploadedFile } from '../middleware/upload.js';
 
 // Helper to generate a URL slug from title
@@ -13,13 +14,15 @@ const generateSlug = (title) => {
     .trim();
 };
 
-// Helper to attach populated includedAssets and availableVehicles to packages
+// Helper to attach populated includedAssets, availableVehicles, and partner tieups (Stay & Food)
 const attachPackageAssets = async (pkgList) => {
   const isArray = Array.isArray(pkgList);
   const list = isArray ? pkgList : [pkgList];
   if (!list.length || !list[0]) return isArray ? [] : null;
 
   const allIds = new Set();
+  const allPartnerIds = new Set();
+
   list.forEach((pkg) => {
     const rawAssetIds = pkg.includedAssetIds || [];
     const rawVehIds = pkg.availableVehicleIds || [];
@@ -38,17 +41,46 @@ const attachPackageAssets = async (pkgList) => {
       const parsed = parseInt(id, 10);
       if (!isNaN(parsed)) allIds.add(parsed);
     });
+
+    // Collect Stay & Food partner IDs
+    if (pkg.stayPartnerId) {
+      const pStay = parseInt(pkg.stayPartnerId, 10);
+      if (!isNaN(pStay)) allPartnerIds.add(pStay);
+    }
+    if (pkg.foodPartnerId) {
+      const pFood = parseInt(pkg.foodPartnerId, 10);
+      if (!isNaN(pFood)) allPartnerIds.add(pFood);
+    }
+    const rawSelectedStays = pkg.selectedStayIds || [];
+    const rawSelectedFoods = pkg.selectedFoodIds || [];
+    (Array.isArray(rawSelectedStays) ? rawSelectedStays : []).forEach((id) => {
+      const parsed = parseInt(id, 10);
+      if (!isNaN(parsed)) allPartnerIds.add(parsed);
+    });
+    (Array.isArray(rawSelectedFoods) ? rawSelectedFoods : []).forEach((id) => {
+      const parsed = parseInt(id, 10);
+      if (!isNaN(parsed)) allPartnerIds.add(parsed);
+    });
   });
 
-  const assets =
+  const [assets, partners] = await Promise.all([
     allIds.size > 0
-      ? await Asset.findAll({
+      ? Asset.findAll({
           where: { id: Array.from(allIds) },
         })
-      : [];
+      : [],
+    allPartnerIds.size > 0
+      ? PartnerTieup.findAll({
+          where: { id: Array.from(allPartnerIds) },
+        })
+      : [],
+  ]);
 
   const assetMap = new Map();
   assets.forEach((a) => assetMap.set(a.id, a.toJSON()));
+
+  const partnerMap = new Map();
+  partners.forEach((p) => partnerMap.set(p.id, p.toJSON()));
 
   const enriched = list.map((pkg) => {
     const data = typeof pkg.toJSON === 'function' ? pkg.toJSON() : { ...pkg };
@@ -67,6 +99,23 @@ const attachPackageAssets = async (pkgList) => {
       .filter(Boolean);
     data.availableVehicles = vehicleIds
       .map((id) => assetMap.get(parseInt(id, 10)))
+      .filter(Boolean);
+
+    // Attach partners
+    data.stayPartner = data.stayPartnerId
+      ? partnerMap.get(parseInt(data.stayPartnerId, 10)) || null
+      : null;
+    data.foodPartner = data.foodPartnerId
+      ? partnerMap.get(parseInt(data.foodPartnerId, 10)) || null
+      : null;
+
+    const rawSelectedStays = data.selectedStayIds || [];
+    const rawSelectedFoods = data.selectedFoodIds || [];
+    data.selectedStays = (Array.isArray(rawSelectedStays) ? rawSelectedStays : [])
+      .map((id) => partnerMap.get(parseInt(id, 10)))
+      .filter(Boolean);
+    data.selectedFoods = (Array.isArray(rawSelectedFoods) ? rawSelectedFoods : [])
+      .map((id) => partnerMap.get(parseInt(id, 10)))
       .filter(Boolean);
 
     return data;

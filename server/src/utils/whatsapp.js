@@ -28,8 +28,14 @@ export function formatBookingWhatsAppMessage(booking) {
       })
     : 'To be confirmed';
 
-  const isVehicleRentalOnly = booking.bookingType === 'vehicle_rental_with_driver';
   const cf = booking.customFeatures;
+  const isRentalWithDriver =
+    booking.bookingType === 'vehicle_rental_with_driver' ||
+    (booking.bookingType === 'vehicle_rental' && cf?.rentalOption === 'with_driver');
+  const isRentalWithoutDriver =
+    booking.bookingType === 'vehicle_rental_without_driver' ||
+    (booking.bookingType === 'vehicle_rental' && cf?.rentalOption === 'without_driver');
+  const isVehicleRentalOnly = isRentalWithDriver || isRentalWithoutDriver;
 
   const categoryLabel = formatCategoryLabel(
     booking.packageSnapshot?.category || booking.category
@@ -38,19 +44,29 @@ export function formatBookingWhatsAppMessage(booking) {
     booking.packageSnapshot?.tier || booking.tier
   );
   const packageTitle = isVehicleRentalOnly
-    ? 'Vehicle Rental Only (with Driver)'
+    ? isRentalWithoutDriver
+      ? 'Vehicle Rental (Self-Drive / Without Driver)'
+      : 'Vehicle Rental (With Mountain Driver)'
     : booking.packageSnapshot?.title || booking.package?.title || 'Hill-Station Package';
 
   const priceFormatted = Number(booking.totalPrice || 0).toLocaleString('en-IN');
 
   const lines = [
-    isVehicleRentalOnly
-      ? '🚗 *Vehicle Rental Booking – Hills Angel Tours*'
+    isRentalWithoutDriver
+      ? '🔑 *Vehicle Rental (Self-Drive) – Hills Angel Tours*'
+      : isRentalWithDriver
+      ? '🚗 *Vehicle Rental (With Driver) – Hills Angel Tours*'
       : '🌿 *Tour Package Booking – Hills Angel Tours*',
     `*Booking ID:* ${booking.bookingId}`,
     `*Customer:* ${booking.customerName}`,
     `*Phone:* ${booking.phone}`,
-    `*Booking Type:* ${isVehicleRentalOnly ? '🚗 Vehicle Only (with Driver)' : '🌿 Tour Package Plan'}`,
+    `*Booking Type:* ${
+      isRentalWithoutDriver
+        ? '🔑 Self-Drive Rental (Without Driver)'
+        : isRentalWithDriver
+        ? '🚗 Vehicle Rental (With Mountain Driver)'
+        : '🌿 Tour Package Plan'
+    }`,
     `*Plan/Package:* ${packageTitle}`,
   ];
 
@@ -68,16 +84,31 @@ export function formatBookingWhatsAppMessage(booking) {
   }
 
   if (cf) {
-    lines.push('*--- Plan Customizations ---*');
-    lines.push(`🍽️ *Food:* ${cf.foodIncluded ? 'Included (Hill Meals)' : 'Not Included / Self-Dining (Food Vena)'}`);
-    lines.push(`🏡 *Stay:* ${cf.stayIncluded ? 'Included (Resort/Camp)' : 'Not Included (Vehicle Only)'}`);
+    if (isRentalWithoutDriver) {
+      lines.push('*--- Self-Drive Details ---*');
+      lines.push('🔑 *Mode:* Self Drive (Customer Driving)');
+      if (cf.drivingLicenseNumber) {
+        lines.push(`🪪 *Driver License:* ${cf.drivingLicenseNumber}`);
+      }
+      lines.push('🛡️ *Security Deposit:* ₹3,000 (Refundable upon vehicle inspection)');
+      lines.push('⛽ *Fuel Policy:* Same-to-Same / Full-to-Full');
+    } else if (isRentalWithDriver) {
+      lines.push('*--- Rental Options ---*');
+      lines.push('🚖 *Driver:* Dedicated Mountain Pilot Included');
+    } else {
+      lines.push('*--- Plan Customizations ---*');
+      lines.push(`🍽️ *Food:* ${cf.foodIncluded ? 'Included (Hill Meals)' : 'Not Included / Self-Dining (Food Vena)'}`);
+      lines.push(`🏡 *Stay:* ${cf.stayIncluded ? 'Included (Resort/Camp)' : 'Not Included (Vehicle Only)'}`);
+    }
     if (cf.campfireIncluded) {
       lines.push('🔥 *Campfire & BBQ:* Included (+₹800)');
     }
     if (cf.photographyIncluded) {
       lines.push('📸 *GoPro 5K Kit:* Included (+₹1,200)');
     }
-    lines.push('🪪 *Chauffeur:* Dedicated Mountain Driver Included');
+    if (!isRentalWithoutDriver) {
+      lines.push('🪪 *Chauffeur:* Dedicated Mountain Driver Included');
+    }
   }
 
   if (booking.transportVehicle?.name) {

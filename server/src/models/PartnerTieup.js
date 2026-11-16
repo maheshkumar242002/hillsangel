@@ -54,6 +54,12 @@ PartnerTieup.init(
       allowNull: false,
       defaultValue: 'Munnar',
     },
+    subLocation: {
+      type: DataTypes.STRING,
+      allowNull: true,
+      defaultValue: '',
+      comment: 'Specific area / place within destination (e.g. Kanthaloor, Chinnakanal)',
+    },
     address: {
       type: DataTypes.TEXT,
       allowNull: true,
@@ -77,19 +83,19 @@ PartnerTieup.init(
       comment: 'Settlement basis: per person, per trip, per room/night, or per meal',
     },
     pricePerPerson: {
-      type: DataTypes.FLOAT,
+      type: DataTypes.DECIMAL(12, 2),
       allowNull: false,
-      defaultValue: 0,
+      defaultValue: 0.0,
     },
     pricePerTrip: {
-      type: DataTypes.FLOAT,
+      type: DataTypes.DECIMAL(12, 2),
       allowNull: false,
-      defaultValue: 0,
+      defaultValue: 0.0,
     },
     pricePerRoom: {
-      type: DataTypes.FLOAT,
+      type: DataTypes.DECIMAL(12, 2),
       allowNull: false,
-      defaultValue: 0,
+      defaultValue: 0.0,
     },
     mealPricing: {
       type: DataTypes.JSON,

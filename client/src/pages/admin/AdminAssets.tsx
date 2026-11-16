@@ -271,14 +271,24 @@ export default function AdminAssets(): React.ReactElement {
           </p>
         </div>
 
-        <button
-          type="button"
-          onClick={handleOpenCreateModal}
-          className="inline-flex items-center justify-center gap-2 bg-gradient-elaichi text-white px-4 py-2.5 rounded-xl text-xs sm:text-sm font-semibold shadow-elaichi hover:shadow-elaichi-lg active:scale-95 transition-all"
-        >
-          <Plus className="w-4 h-4" />
-          <span>Add New Asset</span>
-        </button>
+        <div className="flex items-center gap-2">
+          <Link
+            to="/admin/company-partners?tab=expenses"
+            className="inline-flex items-center gap-1.5 px-3.5 py-2.5 rounded-xl border border-rose-200 bg-rose-50 text-rose-700 hover:bg-rose-100 text-xs sm:text-sm font-semibold transition-all shadow-2xs"
+            title="View or Log Asset & Vehicle Expenses"
+          >
+            <IndianRupee className="w-4 h-4 text-rose-600" />
+            <span>Asset Expenses</span>
+          </Link>
+          <button
+            type="button"
+            onClick={handleOpenCreateModal}
+            className="inline-flex items-center justify-center gap-2 bg-gradient-elaichi text-white px-4 py-2.5 rounded-xl text-xs sm:text-sm font-semibold shadow-elaichi hover:shadow-elaichi-lg active:scale-95 transition-all"
+          >
+            <Plus className="w-4 h-4" />
+            <span>Add New Asset</span>
+          </button>
+        </div>
       </div>
 
       {/* KPI Overview Cards */}

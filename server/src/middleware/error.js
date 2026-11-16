@@ -5,8 +5,8 @@ export const notFoundHandler = (req, res, next) => {
 };
 
 export const errorHandler = (err, req, res, next) => {
-  // If status is still 200, default to 500
-  const statusCode = res.statusCode === 200 ? 500 : res.statusCode;
+  // If status is still 200, default to err.statusCode or 500
+  const statusCode = err.statusCode || (res.statusCode === 200 ? 500 : res.statusCode);
 
   console.error(`[Error] ${req.method} ${req.originalUrl}:`, err.message);
   if (process.env.NODE_ENV !== 'production' && err.stack) {
@@ -35,6 +35,6 @@ export const errorHandler = (err, req, res, next) => {
   res.status(statusCode).json({
     success: false,
     message: err.message || 'An unexpected server error occurred.',
-    ...(process.env.NODE_ENV !== 'production' && { stack: err.stack }),
+    ...(process.env.EXPOSE_ERROR_STACK === 'true' && { stack: err.stack }),
   });
 };

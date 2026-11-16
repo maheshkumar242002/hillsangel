@@ -34,7 +34,51 @@ export const createBooking = async (req, res, next) => {
       rentalAssets,
     } = req.body;
 
-    const isVehicleRentalOnly = bookingType === 'vehicle_rental_with_driver';
+    const isRentalWithDriver =
+      bookingType === 'vehicle_rental_with_driver' ||
+      (bookingType === 'vehicle_rental' && customFeatures?.rentalOption === 'with_driver');
+    const isRentalWithoutDriver =
+      bookingType === 'vehicle_rental_without_driver' ||
+      (bookingType === 'vehicle_rental' && customFeatures?.rentalOption === 'without_driver');
+    const isVehicleRentalOnly = isRentalWithDriver || isRentalWithoutDriver;
+
+    // Strict Input Validations
+    if (!customerName || typeof customerName !== 'string' || customerName.trim().length < 2) {
+      return res.status(400).json({
+        success: false,
+        message: 'Please provide a valid customer name (at least 2 characters).',
+      });
+    }
+
+    const cleanPhoneDigits = (phone && typeof phone === 'string' ? phone.trim().replace(/\D/g, '') : '');
+    const cleanPhone = cleanPhoneDigits.length > 10 ? cleanPhoneDigits.slice(-10) : cleanPhoneDigits;
+    if (!cleanPhone || cleanPhone.length !== 10 || !/^[6-9]/.test(cleanPhone)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Please provide a valid 10-digit Indian mobile number (e.g. 9840123456).',
+      });
+    }
+
+    if (!pickupLocation || typeof pickupLocation !== 'string' || pickupLocation.trim().length < 2) {
+      return res.status(400).json({
+        success: false,
+        message: 'Please provide a valid pickup location.',
+      });
+    }
+
+    if (!travelDate) {
+      return res.status(400).json({
+        success: false,
+        message: 'Please select an intended travel date.',
+      });
+    }
+    const parsedTravelDate = new Date(travelDate);
+    if (isNaN(parsedTravelDate.getTime()) || parsedTravelDate.getFullYear() < 2020) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid travel date provided. Please select a valid calendar date.',
+      });
+    }
 
     // Persons validation
     const numPersons = parseInt(persons, 10);
@@ -133,12 +177,12 @@ export const createBooking = async (req, res, next) => {
     }
 
     // Find or create customer record in MySQL
-    let customer = await Customer.findOne({ where: { phone: phone.trim() } });
+    let customer = await Customer.findOne({ where: { phone: cleanPhone } });
     if (!customer) {
       customer = await Customer.create({
         name: customerName.trim(),
-        phone: phone.trim(),
-        email: email ? email.trim() : null,
+        phone: cleanPhone,
+        email: email && typeof email === 'string' ? email.trim() : null,
         city: pickupLocation ? pickupLocation.trim() : null,
         totalBookings: 1,
         totalSpent: calculatedTotalPrice,
@@ -146,7 +190,7 @@ export const createBooking = async (req, res, next) => {
     } else {
       customer.totalBookings = (customer.totalBookings || 0) + 1;
       customer.totalSpent = (customer.totalSpent || 0) + calculatedTotalPrice;
-      if (email && !customer.email) customer.email = email.trim();
+      if (email && !customer.email && typeof email === 'string') customer.email = email.trim();
       await customer.save();
     }
 
@@ -160,16 +204,15 @@ export const createBooking = async (req, res, next) => {
       ]);
     }
 
-    // Generate unique readable booking ID
-    const bookingId = await generateBookingId();
-
     const snapshot = isVehicleRentalOnly
       ? {
-          title: 'Vehicle Rental with Mountain Driver (Open Route)',
-          slug: 'vehicle-rental-with-driver',
+          title: isRentalWithoutDriver
+            ? `Vehicle Rental - Self Drive (${transportVehicle?.name || 'Private Vehicle'})`
+            : `Vehicle Rental - With Mountain Driver (${transportVehicle?.name || 'Private Vehicle'})`,
+          slug: isRentalWithoutDriver ? 'vehicle-rental-self-drive' : 'vehicle-rental-with-driver',
           category: 'family',
           tier: 'premium',
-          destination: customFeatures?.destinationDetails || 'Open Destination (Directed by Customer)',
+          destination: customFeatures?.destinationDetails || pickupLocation || 'Munnar & Hill Corridors',
           duration: { days: customFeatures?.rentalDays || 1, nights: Math.max(0, (customFeatures?.rentalDays || 1) - 1) },
           price: calculatedTotalPrice,
           priceUnit: 'per trip',
@@ -185,32 +228,47 @@ export const createBooking = async (req, res, next) => {
           priceUnit: pkg?.priceUnit || 'per group',
         };
 
-    // Create the booking record
-    const booking = await Booking.create({
-      bookingId,
-      bookingType,
-      customFeatures: customFeatures || null,
-      customerId: customer.id,
-      categoryId: categoryDoc ? categoryDoc.id : null,
-      tierId: tierDoc ? tierDoc.id : null,
-      packageId: pkg ? pkg.id : null,
-      packageSnapshot: snapshot,
-      customerName: customerName.trim(),
-      phone: phone.trim(),
-      email: email ? email.trim() : null,
-      travelDate: new Date(travelDate),
-      persons: numPersons,
-      pickupLocation: pickupLocation.trim(),
-      specialRequests: specialRequests ? specialRequests.trim() : '',
-      transportVehicle: transportVehicle || {
-        name: 'Mahindra Commander 4x4 Safari Jeep',
-        vehicleType: 'jeep',
-        price: 0,
-      },
-      rentalAssets: Array.isArray(rentalAssets) ? rentalAssets : [],
-      totalPrice: calculatedTotalPrice,
-      status: 'pending',
-    });
+    // Create the booking record with race-condition retry and jitter backoff
+    let booking = null;
+    let attempts = 0;
+    while (!booking && attempts < 10) {
+      attempts++;
+      const bookingId = await generateBookingId();
+      try {
+        booking = await Booking.create({
+          bookingId,
+          bookingType,
+          customFeatures: customFeatures || null,
+          customerId: customer.id,
+          categoryId: categoryDoc ? categoryDoc.id : null,
+          tierId: tierDoc ? tierDoc.id : null,
+          packageId: pkg ? pkg.id : null,
+          packageSnapshot: snapshot,
+          customerName: customerName.trim(),
+          phone: cleanPhone,
+          email: email && typeof email === 'string' ? email.trim() : null,
+          travelDate: parsedTravelDate,
+          persons: numPersons,
+          pickupLocation: pickupLocation.trim(),
+          specialRequests: specialRequests && typeof specialRequests === 'string' ? specialRequests.trim() : '',
+          transportVehicle: transportVehicle || {
+            name: 'Mahindra Commander 4x4 Safari Jeep',
+            vehicleType: 'jeep',
+            price: 0,
+          },
+          rentalAssets: Array.isArray(rentalAssets) ? rentalAssets : [],
+          totalPrice: calculatedTotalPrice,
+          status: 'pending',
+        });
+      } catch (createErr) {
+        if (createErr.name === 'SequelizeUniqueConstraintError' && attempts < 10) {
+          // Add small jitter backoff so concurrent threads don't repeatedly clash
+          await new Promise((resolve) => setTimeout(resolve, Math.floor(Math.random() * 50) + 10));
+          continue;
+        }
+        throw createErr;
+      }
+    }
 
     // Increment seatsBooked for stranger package
     if (pkg && pkg.category === 'stranger') {
@@ -606,8 +664,18 @@ export const exportBookingsCsv = async (req, res, next) => {
 
     const escapeCsv = (val) => {
       if (val === null || val === undefined) return '""';
-      const str = String(val).replace(/"/g, '""');
+      let str = String(val).replace(/"/g, '""');
+      // Neutralize CSV / Excel formula injection (CWE-1236)
+      if (/^[=\+\-@\t\r]/.test(str)) {
+        str = `'${str}`;
+      }
       return `"${str}"`;
+    };
+
+    const safeFormatDate = (d) => {
+      if (!d) return '';
+      const parsed = new Date(d);
+      return !isNaN(parsed.getTime()) ? parsed.toISOString().split('T')[0] : '';
     };
 
     const rows = bookings.map((b) => [
@@ -619,12 +687,12 @@ export const exportBookingsCsv = async (req, res, next) => {
       escapeCsv(b.packageSnapshot?.category || ''),
       escapeCsv(b.packageSnapshot?.tier || ''),
       escapeCsv(b.packageSnapshot?.destination || ''),
-      escapeCsv(b.travelDate ? new Date(b.travelDate).toISOString().split('T')[0] : ''),
+      escapeCsv(safeFormatDate(b.travelDate)),
       escapeCsv(b.persons),
       escapeCsv(b.pickupLocation),
       escapeCsv(b.totalPrice),
       escapeCsv(b.status),
-      escapeCsv(b.createdAt ? new Date(b.createdAt).toISOString() : ''),
+      escapeCsv(safeFormatDate(b.createdAt)),
     ]);
 
     const csvContent = [headers.join(','), ...rows.map((r) => r.join(','))].join('\n');

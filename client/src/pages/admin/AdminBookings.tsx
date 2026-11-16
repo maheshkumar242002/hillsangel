@@ -17,6 +17,8 @@ import {
   User,
   ShieldCheck,
   Maximize2,
+  Key,
+  UserCheck,
 } from 'lucide-react';
 import {
   getBookings,
@@ -332,6 +334,17 @@ export default function AdminBookings(): React.ReactElement {
                     <p className="text-[11px] text-muted">{b.phone}</p>
                   </td>
                   <td className="py-3 px-4 min-w-[200px] max-w-xs">
+                    {b.bookingType === 'vehicle_rental_without_driver' || b.customFeatures?.rentalOption === 'without_driver' ? (
+                      <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full bg-purple-100 text-purple-800 border border-purple-200 mb-1">
+                        <Key className="w-3 h-3 text-purple-600" />
+                        <span>Self-Drive Rental</span>
+                      </span>
+                    ) : b.bookingType === 'vehicle_rental_with_driver' || b.customFeatures?.rentalOption === 'with_driver' ? (
+                      <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-200 mb-1">
+                        <UserCheck className="w-3 h-3 text-emerald-600" />
+                        <span>Rental (With Driver)</span>
+                      </span>
+                    ) : null}
                     <p className="truncate font-medium text-text">{b.packageSnapshot?.title}</p>
                     <div className="flex items-center gap-1.5 mt-0.5">
                       <CategoryChip category={b.packageSnapshot?.category} showLabel={false} />
@@ -522,6 +535,24 @@ export default function AdminBookings(): React.ReactElement {
                 <span className="font-bold text-text text-xs block">{activeBooking.transportVehicle.name}</span>
                 <span className="text-emerald-700 text-[10px] block">
                   {activeBooking.transportVehicle.price ? `Tariff: +${formatINR(activeBooking.transportVehicle.price)}` : 'Included in base package'}
+                </span>
+              </div>
+            )}
+
+            {activeBooking.customFeatures?.drivingLicenseNumber && (
+              <div className="p-3 bg-purple-50/70 border border-purple-200 rounded-xl">
+                <span className="text-purple-800 block text-[11px] font-semibold flex items-center gap-1">
+                  <Key className="w-3.5 h-3.5 text-purple-600" />
+                  <span>Self-Drive Verification Details</span>
+                </span>
+                <div className="flex items-center justify-between mt-1">
+                  <span className="text-xs text-gray-700">Driving License:</span>
+                  <span className="font-mono font-bold text-xs text-purple-900 bg-white px-2 py-0.5 rounded border border-purple-200">
+                    {activeBooking.customFeatures.drivingLicenseNumber}
+                  </span>
+                </div>
+                <span className="text-[10px] text-purple-700 block mt-1">
+                  Security Deposit: ₹3,000 (Refundable upon vehicle inspection at return)
                 </span>
               </div>
             )}

@@ -12,6 +12,9 @@ import {
   PhoneCall,
   ChevronRight,
   Clock,
+  Car,
+  Key,
+  UserCheck,
 } from 'lucide-react';
 import { getFeaturedPackages, getDestinations } from '../api/packages';
 import PackageCard from '../components/packages/PackageCard';
@@ -61,10 +64,10 @@ export default function Home(): React.ReactElement {
   return (
     <>
       <Helmet>
-        <title>El Shaddai Jeep Safari Munnar | 4x4 Off-Road Safaris</title>
+        <title>Hills Angel Tours and Travels | Munnar 4x4 Off-Road Jeep Safari & Tour Packages</title>
         <meta
           name="description"
-          content="Explore nature and feel alive with El Shaddai Jeep Safari Munnar. Special 4x4 off-road safari packages for Family Trips and Friends Trips across Kanthaloor, Mattupatty, Cochin, Viriparai & Ponmudi."
+          content="Explore nature and feel alive with Hills Angel Tours and Travels and our El Shaddai 4x4 Jeep Safari fleet in Munnar. Handcrafted safari circuits and hill-station holiday packages across South India."
         />
       </Helmet>
 
@@ -87,38 +90,46 @@ export default function Home(): React.ReactElement {
             {/* Top Badge */}
             <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/15 backdrop-blur-md border border-white/20 text-xs sm:text-sm font-medium mb-6 animate-in slide-in-from-top duration-500">
               <Sparkles className="w-4 h-4 text-gold-light" />
-              <span>{settings.hero?.badgeText || 'El Shaddai 4x4 Jeep Safari Munnar'}</span>
+              <span>{settings.hero?.badgeText || 'Hills Angel Tours & Travels • El Shaddai Safari Fleet'}</span>
             </div>
 
             {/* Main Heading */}
             <h1 className="text-3xl sm:text-5xl md:text-6xl font-bold tracking-tight mb-6 leading-tight drop-shadow-md">
-              {settings.hero?.title || 'Adventure Awaits in Munnar • Ride, Explore, Discover'}
+              {settings.hero?.title || 'Adventure Awaits • Hills Angel Tours and Travels'}
             </h1>
 
             {/* Subtitle */}
             <p className="max-w-2xl mx-auto text-base sm:text-lg text-gray-200 mb-8 sm:mb-10 font-normal leading-relaxed drop-shadow">
               {settings.hero?.subtitle ||
-                'Explore nature and feel alive with El Shaddai Jeep Safari (KL 68 C 3024). Handcrafted 4x4 safari circuits across Kanthaloor, Mattupatty, Cochin, Viriparai & Ponmudi.'}
+                'Explore nature and feel alive with Hills Angel Tours & Travels, featuring our El Shaddai 4x4 Jeep Safari fleet (KL 68 C 3024). Handcrafted holiday circuits across Munnar, Kanthaloor, and the Western Ghats.'}
             </p>
 
             {/* Hero CTAs (Min 44x44px Tap Targets) */}
-            <div className="flex flex-col sm:flex-row items-center justify-center gap-3.5 max-w-md mx-auto">
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-3.5 max-w-xl mx-auto">
               <Link
                 to="/packages"
-                className="w-full sm:w-auto min-h-[50px] px-8 py-3.5 rounded-2xl bg-gradient-to-r from-emerald-600 via-primary to-primary-dark text-white font-semibold shadow-elaichi-lg hover:brightness-110 active:scale-95 transition-all flex items-center justify-center gap-2"
+                className="w-full sm:w-auto min-h-[50px] px-7 py-3.5 rounded-2xl bg-gradient-to-r from-emerald-600 via-primary to-primary-dark text-white font-semibold shadow-elaichi-lg hover:brightness-110 active:scale-95 transition-all flex items-center justify-center gap-2"
               >
-                <span>Book Jeep Safari</span>
+                <span>Book Safari Package</span>
                 <ArrowRight className="w-4 h-4 text-accent-light" />
+              </Link>
+
+              <Link
+                to="/rentals"
+                className="w-full sm:w-auto min-h-[50px] px-6 py-3.5 rounded-2xl bg-amber-400 hover:bg-amber-500 text-gray-900 font-bold shadow-lg active:scale-95 transition-all flex items-center justify-center gap-2"
+              >
+                <Car className="w-4 h-4" />
+                <span>Rent Vehicle (With / Without Driver)</span>
               </Link>
 
               <a
                 href={whatsappDirect}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="w-full sm:w-auto min-h-[50px] px-6 py-3.5 rounded-2xl bg-white/20 hover:bg-white/30 backdrop-blur-md text-white font-semibold border border-white/30 active:scale-95 transition-all flex items-center justify-center gap-2"
+                className="w-full sm:w-auto min-h-[50px] px-5 py-3.5 rounded-2xl bg-white/20 hover:bg-white/30 backdrop-blur-md text-white font-semibold border border-white/30 active:scale-95 transition-all flex items-center justify-center gap-2"
               >
                 <PhoneCall className="w-4 h-4 text-accent-light" />
-                <span>Call / WhatsApp Concierge</span>
+                <span>Concierge</span>
               </a>
             </div>
 
@@ -269,6 +280,41 @@ export default function Home(): React.ReactElement {
               ))}
             </div>
           )}
+        </section>
+
+        {/* ================= DEDICATED VEHICLE RENTALS BANNER ================= */}
+        <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="relative rounded-3xl bg-gradient-to-br from-[#122316] via-[#1E3626] to-[#142318] text-white p-6 sm:p-12 overflow-hidden shadow-xl border border-emerald-900/40">
+            <div className="relative z-10 max-w-2xl space-y-4">
+              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-400/20 text-amber-300 text-xs font-bold uppercase tracking-wider border border-amber-400/30">
+                <Car className="w-3.5 h-3.5" />
+                <span>Pure Vehicle Hire (வாகனம் மட்டும் வாடகை)</span>
+              </div>
+
+              <h2 className="text-2xl sm:text-4xl font-bold font-serif text-white">
+                Rent 4x4 Jeeps & Cars in Munnar
+              </h2>
+
+              <p className="text-xs sm:text-sm text-gray-300 leading-relaxed">
+                Need only a vehicle without hotel or meals? Rent our iconic 4x4 Thar/Commander Safari Jeeps, Innova Crysta, or Sedans. Available <strong>With Mountain Pilot (டிரைவர் உடன்)</strong> or <strong>Without Driver / Self-Drive (செல்ஃப் டிரைவ்)</strong> with doorstep handover.
+              </p>
+
+              <div className="flex flex-wrap items-center gap-3 pt-2">
+                <Link
+                  to="/rentals"
+                  className="inline-flex items-center gap-2 px-6 py-3 rounded-2xl bg-amber-400 hover:bg-amber-500 text-gray-900 font-bold text-xs sm:text-sm shadow-lg active:scale-95 transition-all"
+                >
+                  <Car className="w-4 h-4" />
+                  <span>Explore Rental Fleet & Tariffs</span>
+                </Link>
+
+                <div className="flex items-center gap-2 text-xs text-emerald-300">
+                  <ShieldCheck className="w-4 h-4 text-emerald-400" />
+                  <span>100% Commercial Insurance & Verified Fleet</span>
+                </div>
+              </div>
+            </div>
+          </div>
         </section>
 
         {/* ================= POPULAR DESTINATIONS ================= */}

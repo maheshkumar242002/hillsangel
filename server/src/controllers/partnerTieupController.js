@@ -276,15 +276,15 @@ export const calculateTripSettlement = async (req, res, next) => {
     let partnersInput = Array.isArray(req.body.partners) && req.body.partners.length > 0
       ? req.body.partners
       : [
-          {
-            name: req.body.partner1Name || 'Partner 1 (Mahesh)',
-            sharePercent: parseFloat(req.body.partner1Percent) ?? 50,
-          },
-          {
-            name: req.body.partner2Name || 'Partner 2 (Co-Organizer)',
-            sharePercent: parseFloat(req.body.partner2Percent) ?? 50,
-          },
-        ];
+        {
+          name: req.body.partner1Name || 'Partner 1 (mohan)',
+          sharePercent: parseFloat(req.body.partner1Percent) ?? 50,
+        },
+        {
+          name: req.body.partner2Name || 'Partner 2 (Co-Organizer)',
+          sharePercent: parseFloat(req.body.partner2Percent) ?? 50,
+        },
+      ];
 
     const partnerCommissionDetails = partnersInput.map((p, idx) => {
       const sharePct = parseFloat(p.sharePercent) || 0;
@@ -982,20 +982,20 @@ export const generateSettlementForBooking = async (bookingOrId, options = {}) =>
 
   // Load configured company partners from Settings
   let partnersList = [
-    { id: 'p1', name: 'Mahesh (Lead Organizer)', sharePercent: 50, phone: '+91 81110 39182' },
+    { id: 'p1', name: 'mohan (Lead Organizer)', sharePercent: 50, phone: '+91 81110 39182' },
     { id: 'p2', name: 'Partner 2 (Co-Organizer)', sharePercent: 50, phone: '' },
   ];
 
   if (settings && settings.organizerPartners) {
     let op = settings.organizerPartners;
     if (typeof op === 'string') {
-      try { op = JSON.parse(op); } catch (e) {}
+      try { op = JSON.parse(op); } catch (e) { }
     }
     if (Array.isArray(op.partners) && op.partners.length > 0) {
       partnersList = op.partners;
     } else if (op.partner1 && op.partner2) {
       partnersList = [
-        { id: 'p1', name: op.partner1.name || 'Mahesh', sharePercent: op.partner1.sharePercent || 50, phone: op.partner1.phone || '', upiId: op.partner1.upiId || '' },
+        { id: 'p1', name: op.partner1.name || 'mohan', sharePercent: op.partner1.sharePercent || 50, phone: op.partner1.phone || '', upiId: op.partner1.upiId || '' },
         { id: 'p2', name: op.partner2.name || 'Co-Organizer', sharePercent: op.partner2.sharePercent || 50, phone: op.partner2.phone || '', upiId: op.partner2.upiId || '' },
       ];
     }

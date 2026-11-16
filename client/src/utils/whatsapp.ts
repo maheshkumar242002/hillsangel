@@ -108,9 +108,23 @@ export function getWhatsAppUrl(phone: string = DEFAULT_WHATSAPP_NUMBER, text: st
 }
 
 /**
- * Helper to open WhatsApp smoothly on mobile or desktop without getting blocked
+ * Helper to open WhatsApp smoothly on mobile or desktop without getting blocked,
+ * with strict URL validation to prevent javascript: or malicious protocol injection.
  */
 export function openWhatsAppSafely(url: string): void {
+  if (!url || typeof url !== 'string') return;
+  
+  // Enforce secure WhatsApp domains
+  const isSafeWhatsAppUrl =
+    url.startsWith('https://wa.me/') ||
+    url.startsWith('https://api.whatsapp.com/') ||
+    url.startsWith('https://web.whatsapp.com/');
+
+  if (!isSafeWhatsAppUrl) {
+    console.warn('[Security] Refused to open non-WhatsApp protocol/URL:', url);
+    return;
+  }
+
   try {
     const newWindow = window.open(url, '_blank', 'noopener,noreferrer');
     if (!newWindow || newWindow.closed || typeof newWindow.closed === 'undefined') {

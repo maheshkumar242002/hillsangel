@@ -2,7 +2,7 @@ import jwt from 'jsonwebtoken';
 import Admin from '../models/Admin.js';
 
 const generateToken = (id) => {
-  return jwt.sign({ id }, process.env.JWT_SECRET || 'hills_angels_jwt_secret', {
+  return jwt.sign({ id }, process.env.JWT_SECRET || 'hills_angels_super_secret_jwt_key_2026_elaichi', {
     expiresIn: '7d',
   });
 };

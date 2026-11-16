@@ -6,6 +6,7 @@ import { getPackages } from '../api/packages';
 import PackageCard from '../components/packages/PackageCard';
 import FilterSheet, { FilterState } from '../components/packages/FilterSheet';
 import BookingModal from '../components/booking/BookingModal';
+import VehicleRentalModal from '../components/booking/VehicleRentalModal';
 import { PackageGridSkeleton } from '../components/common/Skeleton';
 import { IPackage } from '../types';
 
@@ -29,6 +30,7 @@ export default function Packages(): React.ReactElement {
 
   const [selectedBookingPkg, setSelectedBookingPkg] = useState<IPackage | null>(null);
   const [bookingModalOpen, setBookingModalOpen] = useState<boolean>(false);
+  const [vehicleRentalModalOpen, setVehicleRentalModalOpen] = useState<boolean>(false);
 
   // Sync state changes with URL query parameters
   useEffect(() => {
@@ -99,8 +101,7 @@ export default function Packages(): React.ReactElement {
   };
 
   const openDirectVehicleRental = (): void => {
-    setSelectedBookingPkg(packages[0] || null);
-    setBookingModalOpen(true);
+    setVehicleRentalModalOpen(true);
   };
 
   return (
@@ -215,6 +216,12 @@ export default function Packages(): React.ReactElement {
         isOpen={bookingModalOpen}
         onClose={() => setBookingModalOpen(false)}
         selectedPackage={selectedBookingPkg}
+      />
+
+      {/* Dedicated Vehicle Rental Modal */}
+      <VehicleRentalModal
+        isOpen={vehicleRentalModalOpen}
+        onClose={() => setVehicleRentalModalOpen(false)}
       />
     </>
   );

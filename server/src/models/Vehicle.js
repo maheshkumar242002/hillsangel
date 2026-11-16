@@ -48,14 +48,14 @@ Vehicle.init(
       defaultValue: 7,
     },
     pricePerDay: {
-      type: DataTypes.FLOAT,
+      type: DataTypes.DECIMAL(12, 2),
       allowNull: false,
-      defaultValue: 3200,
+      defaultValue: 3200.0,
     },
     tourAddonPrice: {
-      type: DataTypes.FLOAT,
+      type: DataTypes.DECIMAL(12, 2),
       allowNull: false,
-      defaultValue: 0,
+      defaultValue: 0.0,
     },
     categoryLabel: {
       type: DataTypes.STRING,

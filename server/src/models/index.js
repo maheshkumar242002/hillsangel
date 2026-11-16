@@ -14,6 +14,8 @@ import PartnerTieup from './PartnerTieup.js';
 import TripSettlement from './TripSettlement.js';
 import Vehicle from './Vehicle.js';
 import Driver from './Driver.js';
+import Destination from './Destination.js';
+import AssetExpense from './AssetExpense.js';
 
 // Define Associations
 Package.belongsTo(Category, { foreignKey: 'categoryId', as: 'categoryDetails' });
@@ -28,6 +30,12 @@ Customer.hasMany(Booking, { foreignKey: 'customerId', as: 'bookings' });
 Booking.belongsTo(Package, { foreignKey: 'packageId', as: 'packageDetails' });
 Booking.belongsTo(Category, { foreignKey: 'categoryId', as: 'categoryDetails' });
 Booking.belongsTo(Tier, { foreignKey: 'tierId', as: 'tierDetails' });
+
+AssetExpense.belongsTo(Vehicle, { foreignKey: 'vehicleId', as: 'vehicleDetails' });
+Vehicle.hasMany(AssetExpense, { foreignKey: 'vehicleId', as: 'expenses' });
+
+AssetExpense.belongsTo(Asset, { foreignKey: 'assetId', as: 'assetDetails' });
+Asset.hasMany(AssetExpense, { foreignKey: 'assetId', as: 'expenses' });
 
 export {
   Admin,
@@ -45,4 +53,6 @@ export {
   TripSettlement,
   Vehicle,
   Driver,
+  Destination,
+  AssetExpense,
 };

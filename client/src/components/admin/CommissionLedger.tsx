@@ -213,8 +213,7 @@ export default function CommissionLedger({ onSwitchToCalculator }: CommissionLed
     const partnerLines = list
       .map(
         (p) =>
-          `• *${p.name}* (${p.sharePercent}%): *${formatINR(p.amount)}* [${
-            p.status === 'paid' ? '✅ Paid' : '⏳ Pending'
+          `• *${p.name}* (${p.sharePercent}%): *${formatINR(p.amount)}* [${p.status === 'paid' ? '✅ Paid' : '⏳ Pending'
           }]`
       )
       .join('\n');
@@ -266,7 +265,7 @@ _Generated via Hills Angel Admin Console_`;
       const partnersBreakdown: IPartnerPayoutItem[] = [
         {
           id: 'p1',
-          name: 'Partner 1 (Mahesh)',
+          name: 'Partner 1 (mohan)',
           sharePercent: 50,
           amount: Math.round(netProfit * 0.5),
           status: 'pending',
@@ -650,19 +649,18 @@ _Generated via Hills Angel Admin Console_`;
                           {s.settlementCode}
                         </span>
                         <span
-                          className={`text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider ${
-                            s.overallStatus === 'settled'
+                          className={`text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider ${s.overallStatus === 'settled'
                               ? 'bg-emerald-100 text-emerald-800'
                               : s.overallStatus === 'partial'
-                              ? 'bg-amber-100 text-amber-800'
-                              : 'bg-rose-100 text-rose-800'
-                          }`}
+                                ? 'bg-amber-100 text-amber-800'
+                                : 'bg-rose-100 text-rose-800'
+                            }`}
                         >
                           {s.overallStatus === 'settled'
                             ? 'All Paid (செட்டில் செய்யப்பட்டது)'
                             : s.overallStatus === 'partial'
-                            ? 'Partially Paid'
-                            : 'Pending Payout (நிலுவை)'}
+                              ? 'Partially Paid'
+                              : 'Pending Payout (நிலுவை)'}
                         </span>
                       </div>
                       <h4 className="font-serif font-bold text-base text-[#192D20] mt-0.5">
@@ -775,22 +773,20 @@ _Generated via Hills Angel Admin Console_`;
                         return (
                           <div
                             key={partner.id || pIdx}
-                            className={`p-3.5 rounded-xl border transition-all ${
-                              isPaid
+                            className={`p-3.5 rounded-xl border transition-all ${isPaid
                                 ? 'bg-emerald-50/40 border-emerald-200'
                                 : 'bg-amber-50/40 border-amber-200'
-                            }`}
+                              }`}
                           >
                             <div className="flex items-center justify-between">
                               <span className="text-xs font-bold text-gray-900">
                                 {partner.name}
                               </span>
                               <span
-                                className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
-                                  isPaid
+                                className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${isPaid
                                     ? 'bg-emerald-100 text-emerald-800'
                                     : 'bg-amber-100 text-amber-800'
-                                }`}
+                                  }`}
                               >
                                 {isPaid ? 'Paid' : 'Pending'}
                               </span>
@@ -827,11 +823,10 @@ _Generated via Hills Angel Admin Console_`;
                               <button
                                 type="button"
                                 onClick={() => handleOpenPayoutModal(s, pIdx)}
-                                className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all ${
-                                  isPaid
+                                className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all ${isPaid
                                     ? 'bg-white text-gray-700 hover:bg-gray-100 border border-gray-200'
                                     : 'bg-emerald-600 hover:bg-emerald-700 text-white shadow-xs'
-                                }`}
+                                  }`}
                               >
                                 {isPaid ? 'Edit Payout' : 'Mark as Paid'}
                               </button>
@@ -893,11 +888,10 @@ _Generated via Hills Angel Admin Console_`;
                 </label>
                 <div className="grid grid-cols-2 gap-3">
                   <label
-                    className={`flex items-center justify-center gap-2 p-2.5 rounded-xl border text-xs font-bold cursor-pointer transition-all ${
-                      payoutForm.status === 'paid'
+                    className={`flex items-center justify-center gap-2 p-2.5 rounded-xl border text-xs font-bold cursor-pointer transition-all ${payoutForm.status === 'paid'
                         ? 'bg-emerald-50 border-emerald-500 text-emerald-700 ring-2 ring-emerald-500/20'
                         : 'border-gray-200 text-gray-600 hover:bg-gray-50'
-                    }`}
+                      }`}
                   >
                     <input
                       type="radio"
@@ -912,11 +906,10 @@ _Generated via Hills Angel Admin Console_`;
                   </label>
 
                   <label
-                    className={`flex items-center justify-center gap-2 p-2.5 rounded-xl border text-xs font-bold cursor-pointer transition-all ${
-                      payoutForm.status === 'pending'
+                    className={`flex items-center justify-center gap-2 p-2.5 rounded-xl border text-xs font-bold cursor-pointer transition-all ${payoutForm.status === 'pending'
                         ? 'bg-rose-50 border-rose-500 text-rose-700 ring-2 ring-rose-500/20'
                         : 'border-gray-200 text-gray-600 hover:bg-gray-50'
-                    }`}
+                      }`}
                   >
                     <input
                       type="radio"
@@ -972,7 +965,7 @@ _Generated via Hills Angel Admin Console_`;
                 </label>
                 <input
                   type="text"
-                  placeholder="e.g. Sent via Mahesh personal account"
+                  placeholder="e.g. Sent via mohan personal account"
                   value={payoutForm.notes}
                   onChange={(e) => setPayoutForm({ ...payoutForm, notes: e.target.value })}
                   className="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 text-xs focus:ring-2 focus:ring-primary/20 focus:border-primary"
@@ -1170,7 +1163,7 @@ _Generated via Hills Angel Admin Console_`;
                       Math.max(
                         0,
                         manualForm.tripRevenue -
-                          (manualForm.stayCost + manualForm.foodCost + manualForm.transportCost + manualForm.miscCost)
+                        (manualForm.stayCost + manualForm.foodCost + manualForm.transportCost + manualForm.miscCost)
                       )
                     )}
                   </span>

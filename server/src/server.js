@@ -12,21 +12,7 @@ import { notFoundHandler, errorHandler } from './middleware/error.js';
 import { generalLimiter } from './middleware/rateLimiter.js';
 
 // Route imports
-import authRoutes from './routes/authRoutes.js';
-import packageRoutes from './routes/packageRoutes.js';
-import bookingRoutes from './routes/bookingRoutes.js';
-import enquiryRoutes from './routes/enquiryRoutes.js';
-import settingsRoutes from './routes/settingsRoutes.js';
-import dashboardRoutes from './routes/dashboardRoutes.js';
-import customerRoutes from './routes/customerRoutes.js';
-import categoryRoutes from './routes/categoryRoutes.js';
-import tierRoutes from './routes/tierRoutes.js';
-import galleryRoutes from './routes/galleryRoutes.js';
-import assetRoutes from './routes/assetRoutes.js';
-import gpsRoutes from './routes/gpsRoutes.js';
-import partnerTieupRoutes from './routes/partnerTieupRoutes.js';
-import vehicleRoutes from './routes/vehicleRoutes.js';
-import driverRoutes from './routes/driverRoutes.js';
+import apiRoutes from './routes/index.js';
 
 import './models/index.js';
 
@@ -44,13 +30,27 @@ app.use(
   })
 );
 
-// CORS configuration
+// Process crash protection
+process.on('unhandledRejection', (reason, promise) => {
+  console.error('[Process Error] Unhandled Promise Rejection at:', promise, 'reason:', reason);
+});
+process.on('uncaughtException', (error) => {
+  console.error('[Process Error] Uncaught Exception thrown:', error);
+});
+
+// CORS configuration supporting comma-delimited CLIENT_URL and production enforcement
+const configuredOrigins = (process.env.CLIENT_URL || '')
+  .split(',')
+  .map((s) => s.trim())
+  .filter(Boolean);
+
 const allowedOrigins = [
-  process.env.CLIENT_URL,
+  ...configuredOrigins,
   'http://localhost:5173',
   'http://127.0.0.1:5173',
   'http://localhost:3000',
-].filter(Boolean);
+  'http://localhost:4173',
+];
 
 app.use(
   cors({
@@ -58,13 +58,15 @@ app.use(
       // Allow requests with no origin (e.g. mobile apps, curl, server-to-server)
       if (!origin || allowedOrigins.includes(origin)) {
         callback(null, true);
+      } else if (process.env.NODE_ENV === 'production') {
+        callback(new Error(`CORS blocked: Origin ${origin} not permitted`));
       } else {
         callback(null, true); // Permissive in dev to avoid CORS friction
       }
     },
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'X-Device-Key', 'X-API-Key'],
   })
 );
 
@@ -95,21 +97,7 @@ app.get('/api/health', (req, res) => {
 });
 
 // API Routes
-app.use('/api/auth', authRoutes);
-app.use('/api/packages', packageRoutes);
-app.use('/api/bookings', bookingRoutes);
-app.use('/api/enquiries', enquiryRoutes);
-app.use('/api/settings', settingsRoutes);
-app.use('/api/dashboard', dashboardRoutes);
-app.use('/api/customers', customerRoutes);
-app.use('/api/categories', categoryRoutes);
-app.use('/api/tiers', tierRoutes);
-app.use('/api/gallery', galleryRoutes);
-app.use('/api/assets', assetRoutes);
-app.use('/api/gps', gpsRoutes);
-app.use('/api/partners', partnerTieupRoutes);
-app.use('/api/vehicles', vehicleRoutes);
-app.use('/api/drivers', driverRoutes);
+app.use('/api', apiRoutes);
 
 // Error Handlers
 app.use(notFoundHandler);

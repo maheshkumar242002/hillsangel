@@ -45,49 +45,49 @@ const TripSettlement = sequelize.define(
       defaultValue: 1,
     },
     tripRevenue: {
-      type: DataTypes.FLOAT,
-      defaultValue: 0,
+      type: DataTypes.DECIMAL(12, 2),
+      defaultValue: 0.0,
       comment: 'Gross customer collection',
     },
     stayCost: {
-      type: DataTypes.FLOAT,
-      defaultValue: 0,
+      type: DataTypes.DECIMAL(12, 2),
+      defaultValue: 0.0,
     },
     stayPartnerName: {
       type: DataTypes.STRING(150),
       allowNull: true,
     },
     foodCost: {
-      type: DataTypes.FLOAT,
-      defaultValue: 0,
+      type: DataTypes.DECIMAL(12, 2),
+      defaultValue: 0.0,
     },
     foodPartnerName: {
       type: DataTypes.STRING(150),
       allowNull: true,
     },
     transportCost: {
-      type: DataTypes.FLOAT,
-      defaultValue: 0,
+      type: DataTypes.DECIMAL(12, 2),
+      defaultValue: 0.0,
       comment: 'Jeep fuel, driver bata, tolls',
     },
     miscCost: {
-      type: DataTypes.FLOAT,
-      defaultValue: 0,
+      type: DataTypes.DECIMAL(12, 2),
+      defaultValue: 0.0,
       comment: 'Campfire, permits, entry tickets',
     },
     totalExpenses: {
-      type: DataTypes.FLOAT,
-      defaultValue: 0,
+      type: DataTypes.DECIMAL(12, 2),
+      defaultValue: 0.0,
       comment: 'Stay + Food + Transport + Misc',
     },
     netProfit: {
-      type: DataTypes.FLOAT,
-      defaultValue: 0,
+      type: DataTypes.DECIMAL(12, 2),
+      defaultValue: 0.0,
       comment: 'Gross Revenue - Total Expenses',
     },
     profitMarginPercent: {
-      type: DataTypes.FLOAT,
-      defaultValue: 0,
+      type: DataTypes.DECIMAL(5, 2),
+      defaultValue: 0.0,
     },
     // Array of partner shares with status & payment details
     // [{ id, name, phone, sharePercent, amount, status: 'paid'|'pending', paidAt, paymentMode, paymentRef }]

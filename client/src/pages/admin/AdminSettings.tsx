@@ -45,7 +45,7 @@ export default function AdminSettings(): React.ReactElement {
       partners: [
         {
           id: 'p1',
-          name: 'Partner 1 (Mahesh)',
+          name: 'Partner 1 (mohan)',
           phone: '+91 81110 39182',
           sharePercent: 50,
           upiId: '',
@@ -78,7 +78,7 @@ export default function AdminSettings(): React.ReactElement {
             s.organizerPartners.partners = [
               {
                 id: 'p1',
-                name: s.organizerPartners.partner1?.name || 'Partner 1 (Mahesh)',
+                name: s.organizerPartners.partner1?.name || 'Partner 1 (mohan)',
                 phone: s.organizerPartners.partner1?.phone || '+91 81110 39182',
                 sharePercent: s.organizerPartners.partner1?.sharePercent ?? 50,
                 upiId: s.organizerPartners.partner1?.upiId || '',
@@ -109,7 +109,7 @@ export default function AdminSettings(): React.ReactElement {
   const currentPartners: IOrganizerPartnerConfig[] = formData.organizerPartners?.partners || [
     {
       id: 'p1',
-      name: 'Partner 1 (Mahesh)',
+      name: 'Partner 1 (mohan)',
       phone: '+91 81110 39182',
       sharePercent: 50,
       upiId: '',
@@ -379,11 +379,10 @@ export default function AdminSettings(): React.ReactElement {
 
             <div className="flex items-center gap-2">
               <span
-                className={`text-xs font-bold px-3 py-1 rounded-full border flex items-center gap-1.5 ${
-                  totalShareAllocated === 100
+                className={`text-xs font-bold px-3 py-1 rounded-full border flex items-center gap-1.5 ${totalShareAllocated === 100
                     ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
                     : 'bg-amber-50 text-amber-800 border-amber-300'
-                }`}
+                  }`}
               >
                 {totalShareAllocated === 100 ? (
                   <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
@@ -459,7 +458,7 @@ export default function AdminSettings(): React.ReactElement {
                     required
                     value={partner.name}
                     onChange={(e) => handleUpdatePartnerField(index, 'name', e.target.value)}
-                    placeholder="e.g. Mahesh Kumar"
+                    placeholder="e.g. mohan Kumar"
                     className="w-full px-3.5 py-2 rounded-xl border border-gray-200 text-xs font-semibold focus:ring-2 focus:ring-primary"
                   />
                 </div>

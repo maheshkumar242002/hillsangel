@@ -17,6 +17,9 @@ class Package extends Model {
       'availableDates',
       'includedAssetIds',
       'availableVehicleIds',
+      'selectedStayIds',
+      'selectedFoodIds',
+      'fuelConfig',
     ];
     jsonFields.forEach((field) => {
       if (typeof values[field] === 'string') {
@@ -73,11 +76,11 @@ Package.init(
       defaultValue: { days: 1, nights: 0 },
     },
     price: {
-      type: DataTypes.FLOAT,
+      type: DataTypes.DECIMAL(12, 2),
       allowNull: false,
     },
     originalPrice: {
-      type: DataTypes.FLOAT,
+      type: DataTypes.DECIMAL(12, 2),
       allowNull: true,
     },
     priceUnit: {
@@ -131,6 +134,30 @@ Package.init(
     availableVehicleIds: {
       type: DataTypes.JSON,
       defaultValue: [],
+    },
+    stayPartnerId: {
+      type: DataTypes.INTEGER,
+      allowNull: true,
+    },
+    foodPartnerId: {
+      type: DataTypes.INTEGER,
+      allowNull: true,
+    },
+    selectedStayIds: {
+      type: DataTypes.JSON,
+      defaultValue: [],
+    },
+    selectedFoodIds: {
+      type: DataTypes.JSON,
+      defaultValue: [],
+    },
+    totalKm: {
+      type: DataTypes.FLOAT,
+      defaultValue: 0,
+    },
+    fuelConfig: {
+      type: DataTypes.JSON,
+      defaultValue: null,
     },
     _id: {
       type: DataTypes.VIRTUAL,

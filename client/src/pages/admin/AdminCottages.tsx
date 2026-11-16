@@ -35,7 +35,8 @@ import {
   deletePartner,
   uploadPartnerImage,
 } from '../../api/partners';
-import { IPartnerTieup, PartnerType, PricingModel } from '../../types';
+import { getDestinations } from '../../api/destinations';
+import { IPartnerTieup, PartnerType, PricingModel, IDestination } from '../../types';
 import { formatINR } from '../../utils/formatters';
 
 const STAY_TYPES = [
@@ -47,7 +48,7 @@ const STAY_TYPES = [
   { id: 'hotel', label: 'Hotel' },
 ];
 
-const POPULAR_LOCATIONS = ['Ooty', 'Kodaikanal', 'Munnar', 'Wayanad', 'Coonoor', 'Valparai', 'Yercaud', 'Coorg'];
+const POPULAR_LOCATIONS = ['Munnar', 'Ooty', 'Kodaikanal', 'Wayanad', 'Coorg', 'Valparai', 'Coonoor', 'Yercaud'];
 
 const DEFAULT_AMENITIES = [
   'Campfire 🔥',
@@ -67,6 +68,7 @@ interface CottageFormData {
   category: 'stay';
   type: PartnerType;
   location: string;
+  subLocation: string;
   address: string;
   contactPerson: string;
   phone: string;
@@ -89,7 +91,8 @@ const emptyCottageForm: CottageFormData = {
   partnerCode: '',
   category: 'stay',
   type: 'cottage',
-  location: 'Ooty',
+  location: 'Munnar',
+  subLocation: 'Munnar Town',
   address: '',
   contactPerson: '',
   phone: '',
@@ -125,6 +128,15 @@ export default function AdminCottages(): React.ReactElement {
   const [editingCottage, setEditingCottage] = useState<IPartnerTieup | null>(null);
   const [formData, setFormData] = useState<CottageFormData>(emptyCottageForm);
   const [previewPhoto, setPreviewPhoto] = useState<string | null>(null);
+  const [destinationsList, setDestinationsList] = useState<IDestination[]>([]);
+
+  useEffect(() => {
+    getDestinations().then((res) => {
+      if (res?.success) {
+        setDestinationsList(res.destinations || []);
+      }
+    });
+  }, []);
 
   const fetchCottages = async (): Promise<void> => {
     try {
@@ -159,8 +171,12 @@ export default function AdminCottages(): React.ReactElement {
 
   const handleOpenAdd = () => {
     setEditingCottage(null);
+    const defDest = destinationsList[0]?.name || 'Munnar';
+    const defSub = destinationsList[0]?.subLocations?.[0] || 'Munnar Town';
     setFormData({
       ...emptyCottageForm,
+      location: defDest,
+      subLocation: defSub,
       partnerCode: `COT-${Math.floor(100 + Math.random() * 900)}`,
     });
     setIsModalOpen(true);
@@ -173,7 +189,8 @@ export default function AdminCottages(): React.ReactElement {
       partnerCode: cottage.partnerCode || `COT-${cottage.id}`,
       category: 'stay',
       type: (cottage.type as PartnerType) || 'cottage',
-      location: cottage.location || 'Ooty',
+      location: cottage.location || 'Munnar',
+      subLocation: cottage.subLocation || '',
       address: cottage.address || '',
       contactPerson: cottage.contactPerson || '',
       phone: cottage.phone || '',
@@ -521,8 +538,8 @@ export default function AdminCottages(): React.ReactElement {
 
                     <td className="py-2.5 px-4">
                       <span className="font-semibold text-gray-800 flex items-center gap-1">
-                        <MapPin className="w-3 h-3 text-emerald-600" />
-                        {cottage.location}
+                        <MapPin className="w-3 h-3 text-emerald-600 shrink-0" />
+                        <span>{cottage.subLocation ? `${cottage.subLocation}, ${cottage.location}` : cottage.location}</span>
                       </span>
                       {cottage.address && (
                         <span className="text-[10px] text-gray-400 block line-clamp-1 mt-0.5">
@@ -754,7 +771,7 @@ export default function AdminCottages(): React.ReactElement {
                   <h2 className="text-sm font-bold text-gray-900">
                     {editingCottage ? `Edit ${editingCottage.name}` : 'Register New Cottage / Resort'}
                   </h2>
-                  <p className="text-[11px] text-gray-400">Save stay contract details directly into MySQL</p>
+                  <p className="text-[11px] text-gray-400">Save stay contract details </p>
                 </div>
               </div>
               <button
@@ -856,34 +873,74 @@ export default function AdminCottages(): React.ReactElement {
                 </div>
               </div>
 
-              {/* Location & Address */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              {/* Destination & Sub-Location (Place/Area) */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 p-3.5 rounded-2xl bg-emerald-50/40 border border-emerald-100">
                 <div>
-                  <label className="block text-xs font-semibold text-gray-700 mb-1">
-                    Hill Location <span className="text-rose-500">*</span>
+                  <label className="block text-xs font-semibold text-gray-800 mb-1">
+                    Destination (Hill Station) <span className="text-rose-500">*</span>
                   </label>
-                  <input
-                    type="text"
-                    required
+                  <select
                     value={formData.location}
-                    onChange={(e) => setFormData({ ...formData, location: e.target.value })}
-                    placeholder="e.g. Ooty, Munnar, Kodaikanal"
-                    className="w-full px-3 py-1.5 text-xs rounded-xl border border-gray-200 bg-gray-50/50 hover:bg-white focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500"
-                  />
+                    onChange={(e) => {
+                      const newLoc = e.target.value;
+                      const matched = destinationsList.find((d) => d.name.toLowerCase() === newLoc.toLowerCase());
+                      setFormData((prev) => ({
+                        ...prev,
+                        location: newLoc,
+                        subLocation: matched?.subLocations?.[0] || '',
+                      }));
+                    }}
+                    className="w-full px-3 py-2 text-xs rounded-xl border border-gray-200 bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500 font-semibold"
+                  >
+                    {destinationsList.map((d) => (
+                      <option key={d.name} value={d.name}>
+                        {d.name} ({d.state})
+                      </option>
+                    ))}
+                    {!destinationsList.some((d) => d.name.toLowerCase() === formData.location.toLowerCase()) && (
+                      <option value={formData.location}>{formData.location}</option>
+                    )}
+                  </select>
                 </div>
 
                 <div>
-                  <label className="block text-xs font-semibold text-gray-700 mb-1">
-                    Full Address
+                  <label className="block text-xs font-semibold text-gray-800 mb-1">
+                    Specific Place / Area (in {formData.location})
                   </label>
+                  <select
+                    value={formData.subLocation}
+                    onChange={(e) => setFormData({ ...formData, subLocation: e.target.value })}
+                    className="w-full px-3 py-2 text-xs rounded-xl border border-gray-200 bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500 font-medium"
+                  >
+                    <option value="">-- Choose Place / Area --</option>
+                    {(destinationsList.find((d) => d.name.toLowerCase() === formData.location.toLowerCase())?.subLocations || []).map((sub) => (
+                      <option key={sub} value={sub}>
+                        {sub}
+                      </option>
+                    ))}
+                  </select>
                   <input
                     type="text"
-                    value={formData.address}
-                    onChange={(e) => setFormData({ ...formData, address: e.target.value })}
-                    placeholder="e.g. Near Botanical Garden Road, Ooty"
-                    className="w-full px-3 py-1.5 text-xs rounded-xl border border-gray-200 bg-gray-50/50 hover:bg-white focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500"
+                    value={formData.subLocation}
+                    onChange={(e) => setFormData({ ...formData, subLocation: e.target.value })}
+                    placeholder="Or type custom place (e.g. Kanthaloor Village)"
+                    className="w-full mt-1.5 px-2.5 py-1 text-[11px] rounded-lg border border-gray-200 bg-white focus:outline-none focus:ring-1 focus:ring-emerald-500"
                   />
                 </div>
+              </div>
+
+              {/* Full Address */}
+              <div>
+                <label className="block text-xs font-semibold text-gray-700 mb-1">
+                  Full Property Address & Landmarks
+                </label>
+                <input
+                  type="text"
+                  value={formData.address}
+                  onChange={(e) => setFormData({ ...formData, address: e.target.value })}
+                  placeholder="e.g. Apple Orchard Lane, Near Cave Temple, Kanthaloor, Munnar"
+                  className="w-full px-3 py-1.5 text-xs rounded-xl border border-gray-200 bg-gray-50/50 hover:bg-white focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500"
+                />
               </div>
 
               {/* Pricing: Per Room & Per Person */}

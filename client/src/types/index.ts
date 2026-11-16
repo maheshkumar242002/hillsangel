@@ -102,8 +102,31 @@ export interface IPackage {
   featured: boolean;
   includedAssets?: any[];
   availableVehicles?: any[];
+  stayPartnerId?: number | string | null;
+  foodPartnerId?: number | string | null;
+  stayPartner?: IPartnerTieup | null;
+  foodPartner?: IPartnerTieup | null;
+  selectedStayIds?: Array<number | string>;
+  selectedFoodIds?: Array<number | string>;
+  selectedStays?: IPartnerTieup[];
+  selectedFoods?: IPartnerTieup[];
+  totalKm?: number;
+  fuelConfig?: IFuelConfig;
   createdAt?: string;
   updatedAt?: string;
+}
+
+export interface IFuelConfig {
+  totalKm: number;
+  fuelType: 'Diesel' | 'Petrol' | 'Electric' | 'CNG';
+  mileage: number;
+  fuelPrice: number;
+  estimatedLiters: number;
+  totalFuelCost: number;
+  driverBatta?: number;
+  tollParking?: number;
+  costPerKm?: number;
+  totalTransitCost?: number;
 }
 
 export interface IPackageSnapshot {
@@ -246,7 +269,11 @@ export interface IRentalAssetSelection {
   quantity?: number;
 }
 
-export type BookingType = 'tour_package' | 'vehicle_rental_with_driver';
+export type BookingType =
+  | 'tour_package'
+  | 'vehicle_rental_with_driver'
+  | 'vehicle_rental_without_driver'
+  | 'vehicle_rental';
 
 export interface ICustomPlanFeatures {
   foodIncluded: boolean; // Food venum / vena
@@ -257,6 +284,103 @@ export interface ICustomPlanFeatures {
   rentalDays?: number;
   openDestination?: boolean;
   destinationDetails?: string;
+  rentalOption?: 'with_driver' | 'without_driver';
+  drivingLicenseNumber?: string;
+  securityDepositAcknowledged?: boolean;
+}
+
+// ==========================================
+// Asset & Vehicle Expense Ledger Interfaces
+// ==========================================
+
+export type ExpenseCategory =
+  | 'fuel'
+  | 'service_maintenance'
+  | 'repair_parts'
+  | 'insurance'
+  | 'fc_permit'
+  | 'tyres'
+  | 'washing_cleaning'
+  | 'toll_fastag'
+  | 'gear_equipment'
+  | 'other';
+
+export type ExpenseEntityType = 'vehicle' | 'asset' | 'general';
+
+export type ExpensePaymentMode =
+  | 'gpay_upi'
+  | 'cash'
+  | 'bank_transfer'
+  | 'credit_card'
+  | 'company_account';
+
+export type ExpenseStatus = 'pending_reimbursement' | 'reimbursed' | 'direct_company';
+
+export interface IAssetExpense {
+  _id?: string;
+  id?: number | string;
+  expenseCode: string;
+  title: string;
+  category: ExpenseCategory;
+  entityType: ExpenseEntityType;
+  vehicleId?: number | null;
+  vehicleReg?: string;
+  vehicleName?: string;
+  assetId?: number | null;
+  assetCode?: string;
+  assetName?: string;
+  amount: number;
+  expenseDate: string;
+  odometerKm?: number | null;
+  paidByPartnerId: string;
+  paidByPartnerName: string;
+  paymentMode: ExpensePaymentMode;
+  paymentRef?: string;
+  receiptUrl?: string;
+  status: ExpenseStatus;
+  reimbursedAt?: string | null;
+  reimbursementRef?: string;
+  notes?: string;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export interface IPartnerAccountSummary {
+  partnerId: string;
+  partnerName: string;
+  totalPaid: number;
+  reimbursed: number;
+  pendingReimbursement: number;
+  directCompany: number;
+  expenseCount: number;
+}
+
+export interface IVehicleExpenseSummary {
+  vehicleReg: string;
+  vehicleName: string;
+  vehicleId?: number;
+  totalExpense: number;
+  expenseCount: number;
+  fuelExpense: number;
+  serviceExpense: number;
+  insuranceExpense: number;
+  otherExpense: number;
+}
+
+export interface IExpenseStats {
+  totalExpenseAmount: number;
+  totalTransactions: number;
+  totalPendingReimbursement: number;
+  totalReimbursed: number;
+  totalDirectCompany: number;
+  entityBreakdown: {
+    vehicle: { count: number; amount: number };
+    asset: { count: number; amount: number };
+    general: { count: number; amount: number };
+  };
+  categoryBreakdown: Record<string, { count: number; amount: number }>;
+  partnerAccounts: IPartnerAccountSummary[];
+  vehicleBreakdown: IVehicleExpenseSummary[];
 }
 
 // ==========================================
@@ -574,11 +698,33 @@ export type PricingModel = 'per_person' | 'per_trip' | 'per_room' | 'per_meal';
 
 export type FoodType = 'all' | 'veg' | 'non_veg' | 'buffet';
 
+export interface IMealMenuTier {
+  price?: number;
+  items: string[];
+  description?: string;
+}
+
+export interface IMealMenuInclusions {
+  breakfast?: {
+    lite?: IMealMenuTier;
+    rich?: IMealMenuTier;
+  };
+  lunch?: {
+    lite?: IMealMenuTier;
+    rich?: IMealMenuTier;
+  };
+  dinner?: {
+    lite?: IMealMenuTier;
+    rich?: IMealMenuTier;
+  };
+}
+
 export interface IMealPricing {
   breakfast?: number;
   lunch?: number;
   dinner?: number;
   fullDay?: number;
+  menuDetails?: IMealMenuInclusions;
 }
 
 export interface IPartnerTieup {
@@ -589,6 +735,7 @@ export interface IPartnerTieup {
   category: PartnerCategory;
   type: PartnerType;
   location: string;
+  subLocation?: string;
   address?: string;
   contactPerson?: string;
   phone: string;
@@ -728,5 +875,35 @@ export interface ICommissionStats {
   totalPendingCommission: number;
   partnerSummary: IPartnerCommissionSummary[];
 }
+
+export interface ISubLocationStat {
+  name: string;
+  lodgesCount: number;
+  restaurantsCount: number;
+}
+
+export interface IDestination {
+  _id?: string;
+  id?: number | string;
+  name: string;
+  state: string;
+  tagline?: string;
+  description?: string;
+  subLocations: string[];
+  sightseeingSpots?: string[];
+  popularFor?: string[];
+  bestTimeToVisit?: string;
+  imageUrl?: string;
+  status: 'active' | 'inactive';
+  sortOrder?: number;
+  lodgesCount?: number;
+  restaurantsCount?: number;
+  packagesCount?: number;
+  subLocationsCount?: number;
+  subLocationBreakdown?: ISubLocationStat[];
+  createdAt?: string;
+  updatedAt?: string;
+}
+
 
 

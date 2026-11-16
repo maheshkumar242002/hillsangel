@@ -12,7 +12,7 @@ class Settings extends Model {
       if (typeof values[field] === 'string') {
         try {
           values[field] = JSON.parse(values[field]);
-        } catch (e) {}
+        } catch (e) { }
       }
     });
     return values;
@@ -73,7 +73,7 @@ Settings.init(
         enabled: true,
         splitMode: 'percentage',
         partner1: {
-          name: 'Partner 1 (Mahesh)',
+          name: 'Partner 1 (mohan)',
           phone: '+91 81110 39182',
           sharePercent: 50,
           upiId: '',

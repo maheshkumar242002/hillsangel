@@ -1,139 +1,8 @@
 import VehicleGps from '../models/VehicleGps.js';
 
-// Pre-defined initial safari fleet with GPS positions across Munnar safari trails, highways, and Office base
-const defaultVehicles = [
-  {
-    vehicleName: 'Mahindra Commander 4x4 Safari (KL 68 C 3024)',
-    regNumber: 'KL 68 C 3024',
-    vehicleType: 'jeep',
-    driverName: 'Murugan (Mountain Chauffeur)',
-    driverPhone: '+91 98421 23456',
-    status: 'on_tour',
-    tripType: 'vehicle_rental_with_driver',
-    customerName: 'Karthik Raja (Private Hire)',
-    customerPhone: '+91 98412 77889',
-    destination: 'Flexible / Directed by Customer (Open Route)',
-    planCustomizations: 'Vehicle + Chauffeur Only (Food: Excluded)',
-    latitude: 10.1982,
-    longitude: 77.1685,
-    speed: 36,
-    heading: 68,
-    altitude: 1680,
-    ignition: true,
-    batteryLevel: 94,
-    currentLocationName: 'Near Luckam Waterfalls, Kanthaloor Highway Stretch',
-    assignedTour: 'Vehicle Rental with Driver (Open Hill Route)',
-    passengersCount: 5,
-    deviceId: 'GPS-KL68C-3024',
-    routeHistory: [
-      { lat: 10.0889, lng: 77.0595, speed: 20, time: '09:00 AM' },
-      { lat: 10.1150, lng: 77.0820, speed: 32, time: '09:30 AM' },
-      { lat: 10.1540, lng: 77.1210, speed: 28, time: '10:15 AM' },
-      { lat: 10.1982, lng: 77.1685, speed: 36, time: '11:00 AM' },
-    ],
-  },
-  {
-    vehicleName: 'Mahindra Thar 4x4 Off-Road (KL 68 D 1122)',
-    regNumber: 'KL 68 D 1122',
-    vehicleType: 'jeep',
-    driverName: 'Senthil Kumar (Mountain Guide)',
-    driverPhone: '+91 94432 87654',
-    status: 'on_tour',
-    tripType: 'vehicle_rental_with_driver',
-    customerName: 'Suresh & Friends (Rental Only)',
-    customerPhone: '+91 94433 11223',
-    destination: 'Coimbatore - Valparai / Kundala (Custom Drop)',
-    planCustomizations: 'Vehicle + Chauffeur + Campfire Add-on',
-    latitude: 10.0824,
-    longitude: 77.1245,
-    speed: 42,
-    heading: 135,
-    altitude: 1720,
-    ignition: true,
-    batteryLevel: 88,
-    currentLocationName: 'Mattupatty Dam & Echo Point Ridge',
-    assignedTour: 'Vehicle Rental with Driver (Open Route)',
-    passengersCount: 4,
-    deviceId: 'GPS-KL68D-1122',
-    routeHistory: [
-      { lat: 10.0889, lng: 77.0595, speed: 25, time: '09:30 AM' },
-      { lat: 10.0810, lng: 77.0950, speed: 38, time: '10:00 AM' },
-      { lat: 10.0824, lng: 77.1245, speed: 42, time: '10:45 AM' },
-    ],
-  },
-  {
-    vehicleName: 'Force Gurkha 4x4 Extreme Rig (KL 68 E 4040)',
-    regNumber: 'KL 68 E 4040',
-    vehicleType: 'jeep',
-    driverName: 'Anand Raj (Off-Road Specialist)',
-    driverPhone: '+91 97865 43210',
-    status: 'on_tour',
-    tripType: 'tour_package',
-    customerName: 'Deepak Sharma (Family Safari)',
-    customerPhone: '+91 97865 99887',
-    destination: 'Viriparai River Crossing & Tiger Cave',
-    planCustomizations: 'Tour Package (Food: Included, Stay: Included)',
-    latitude: 10.0430,
-    longitude: 77.0210,
-    speed: 24,
-    heading: 210,
-    altitude: 1410,
-    ignition: true,
-    batteryLevel: 91,
-    currentLocationName: 'Viriparai River Crossing Off-Road Track',
-    assignedTour: 'Viriparai 4x4 River Crossing Thrill (Package Tour)',
-    passengersCount: 6,
-    deviceId: 'GPS-KL68E-4040',
-    routeHistory: [
-      { lat: 10.0889, lng: 77.0595, speed: 30, time: '08:45 AM' },
-      { lat: 10.0650, lng: 77.0390, speed: 28, time: '09:30 AM' },
-      { lat: 10.0430, lng: 77.0210, speed: 24, time: '10:20 AM' },
-    ],
-  },
-  {
-    vehicleName: 'Mahindra Bolero Camper 4x4 (KL 68 F 5566)',
-    regNumber: 'KL 68 F 5566',
-    vehicleType: 'pickup',
-    driverName: 'Karthik Raja',
-    driverPhone: '+91 99441 55667',
-    status: 'idle',
-    tripType: 'depot_standby',
-    customerName: 'None (Standby Fleet)',
-    customerPhone: '',
-    destination: 'Hills Angel Collection Depot, Perur',
-    planCustomizations: 'Available for Instant Rental with Driver',
-    latitude: 10.9820004,
-    longitude: 76.9334183,
-    speed: 0,
-    heading: 0,
-    altitude: 412,
-    ignition: false,
-    batteryLevel: 100,
-    currentLocationName: 'Office & Vehicle Collection Point, Perur (Coimbatore Base)',
-    assignedTour: 'Stationed at Collection Depot - Ready for Rental Dispatch',
-    passengersCount: 0,
-    deviceId: 'GPS-KL68F-5566',
-    routeHistory: [
-      { lat: 10.9820004, lng: 76.9334183, speed: 0, time: '08:00 AM' },
-    ],
-  },
-];
-
-// Helper: Ensure initial vehicles exist in database
-async function ensureVehiclesExist() {
-  const count = await VehicleGps.count();
-  if (count === 0) {
-    for (const v of defaultVehicles) {
-      await VehicleGps.create(v);
-    }
-  }
-}
-
-// 1. Get all tracked vehicles + live fleet summary
+// 1. Get all tracked vehicles + live fleet summary (100% database driven)
 export const getTrackedVehicles = async (req, res, next) => {
   try {
-    await ensureVehiclesExist();
-
     const vehicles = await VehicleGps.findAll({
       order: [['status', 'ASC'], ['updatedAt', 'DESC']],
     });
@@ -188,10 +57,45 @@ export const getVehicleById = async (req, res, next) => {
 // 3. Update Vehicle GPS Telemetry (from IoT hardware tracker or driver app)
 export const updateVehicleGps = async (req, res, next) => {
   try {
-    const { regNumber, deviceId, latitude, longitude, speed, heading, altitude, ignition, batteryLevel, currentLocationName, status } = req.body;
+    // 1. Device / Admin Authentication Check
+    const deviceKey = req.headers['x-device-key'] || req.headers['x-api-key'];
+    const configuredKey = process.env.GPS_DEVICE_API_KEY || 'hills_angels_gps_iot_device_auth_2026_safe';
+    const isAdmin = Boolean(req.admin);
+
+    if (!isAdmin && (!deviceKey || deviceKey !== configuredKey)) {
+      return res.status(401).json({
+        success: false,
+        message: 'Unauthorized GPS update. Valid X-Device-Key or admin authorization required.',
+      });
+    }
+
+    const regNumber = req.body.regNumber || req.body.registrationNumber;
+    const { deviceId, latitude, longitude, speed, heading, altitude, ignition, batteryLevel, currentLocationName, status } = req.body;
 
     if (!regNumber && !deviceId) {
       return res.status(400).json({ success: false, message: 'Vehicle registration number or device ID is required' });
+    }
+
+    // 2. Validate coordinates if provided
+    if (latitude !== undefined) {
+      const latNum = Number(latitude);
+      if (isNaN(latNum) || latNum < -90 || latNum > 90) {
+        return res.status(400).json({ success: false, message: 'Invalid latitude: must be a number between -90 and 90' });
+      }
+    }
+
+    if (longitude !== undefined) {
+      const lngNum = Number(longitude);
+      if (isNaN(lngNum) || lngNum < -180 || lngNum > 180) {
+        return res.status(400).json({ success: false, message: 'Invalid longitude: must be a number between -180 and 180' });
+      }
+    }
+
+    if (status !== undefined) {
+      const validStatuses = ['on_tour', 'idle', 'returning', 'stopped', 'maintenance'];
+      if (!validStatuses.includes(status)) {
+        return res.status(400).json({ success: false, message: `Invalid status: must be one of ${validStatuses.join(', ')}` });
+      }
     }
 
     let vehicle = await VehicleGps.findOne({
@@ -304,10 +208,10 @@ export const simulateGpsStep = async (req, res, next) => {
 // 5. Reset GPS locations back to base checkpoints
 export const resetVehiclesGps = async (req, res, next) => {
   try {
-    await VehicleGps.destroy({ where: {} });
-    for (const v of defaultVehicles) {
-      await VehicleGps.create(v);
-    }
+    await VehicleGps.update(
+      { speed: 0, status: 'idle', ignition: false },
+      { where: {} }
+    );
     const vehicles = await VehicleGps.findAll();
     return res.status(200).json({ success: true, message: 'Fleet GPS locations reset to base', vehicles });
   } catch (err) {

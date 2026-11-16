@@ -19,6 +19,8 @@ import {
   Home,
   UtensilsCrossed,
   Calculator,
+  MapPin,
+  Receipt,
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 
@@ -46,7 +48,8 @@ const navSections: NavSection[] = [
     title: 'OPERATIONS',
     items: [
       { name: 'Dashboard', path: '/admin', icon: LayoutDashboard, exact: true },
-      { name: 'Tour Packages', path: '/admin/packages', icon: Compass },
+      { name: 'Destination Master', path: '/admin/destinations', icon: MapPin },
+      { name: 'Package Master', path: '/admin/packages', icon: Compass },
       { name: 'Bookings', path: '/admin/bookings', icon: CalendarCheck },
       { name: 'Enquiries', path: '/admin/enquiries', icon: MessageSquare },
     ],
@@ -55,7 +58,7 @@ const navSections: NavSection[] = [
     title: 'FLEET & SAFARI',
     items: [
       { name: 'Vehicle Master', path: '/admin/vehicles', icon: Car },
-      { name: 'Mountain Pilots', path: '/admin/drivers', icon: Users },
+      { name: 'Driver Master', path: '/admin/drivers', icon: Users },
       {
         name: 'Live GPS Fleet',
         path: '/admin/tracking',
@@ -64,6 +67,7 @@ const navSections: NavSection[] = [
         badgeColor: 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30',
       },
       { name: 'Assets & Gear', path: '/admin/assets', icon: Boxes },
+      { name: 'Asset & Vehicle Expenses', path: '/admin/company-partners?tab=expenses', icon: Receipt },
     ],
   },
   {

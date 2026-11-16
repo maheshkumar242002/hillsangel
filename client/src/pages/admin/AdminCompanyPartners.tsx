@@ -45,6 +45,7 @@ import {
 } from '../../types';
 import { formatINR } from '../../utils/formatters';
 import CommissionLedger from '../../components/admin/CommissionLedger';
+import AssetExpenseLedger from '../../components/admin/AssetExpenseLedger';
 
 interface OrganizerPartnerItem {
   id: string;
@@ -57,8 +58,18 @@ interface OrganizerPartnerItem {
 
 export default function AdminCompanyPartners(): React.ReactElement {
   const [searchParams] = useSearchParams();
-  const initialTab = searchParams.get('tab') === 'calculator' ? 'calculator' : 'ledger';
-  const [activeTab, setActiveTab] = useState<'ledger' | 'calculator' | 'manage' | 'defaults'>(initialTab);
+  const tabParam = searchParams.get('tab');
+  const initialTab =
+    tabParam === 'calculator'
+      ? 'calculator'
+      : tabParam === 'expenses'
+      ? 'expenses'
+      : tabParam === 'manage'
+      ? 'manage'
+      : tabParam === 'defaults'
+      ? 'defaults'
+      : 'ledger';
+  const [activeTab, setActiveTab] = useState<'ledger' | 'calculator' | 'manage' | 'defaults' | 'expenses'>(initialTab);
 
   // Pre-configured baseline pricing defaults
   const [tripDefaults, setTripDefaults] = useState<ITripExpenseDefaults>({
@@ -77,9 +88,9 @@ export default function AdminCompanyPartners(): React.ReactElement {
   const [partners, setPartners] = useState<OrganizerPartnerItem[]>([
     {
       id: 'p1',
-      name: 'Partner 1 (Mahesh)',
+      name: 'Partner 1 (mohan)',
       phone: '9876543210',
-      upiId: 'mahesh@okaxis',
+      upiId: 'mohan@okaxis',
       sharePercent: 50,
       role: 'Managing Partner',
     },
@@ -150,14 +161,14 @@ export default function AdminCompanyPartners(): React.ReactElement {
       booking.packageSnapshot?.duration?.nights !== undefined
         ? booking.packageSnapshot.duration.nights
         : pkgObj?.duration?.nights !== undefined
-        ? pkgObj.duration.nights
-        : 1;
+          ? pkgObj.duration.nights
+          : 1;
     const days =
       booking.packageSnapshot?.duration?.days !== undefined
         ? booking.packageSnapshot.duration.days
         : pkgObj?.duration?.days !== undefined
-        ? pkgObj.duration.days
-        : 2;
+          ? pkgObj.duration.days
+          : 2;
     setCalcNights(nights);
     setCalcDays(days);
 
@@ -471,8 +482,7 @@ export default function AdminCompanyPartners(): React.ReactElement {
     const partnerLines = (split.partners || [])
       .map(
         (p) =>
-          `• 👤 *${p.name}* (${p.sharePercent}%): *${formatINR(p.amount)}* ${
-            p.phone ? `| 📱 ${p.phone}` : ''
+          `• 👤 *${p.name}* (${p.sharePercent}%): *${formatINR(p.amount)}* ${p.phone ? `| 📱 ${p.phone}` : ''
           }`
       )
       .join('\n');
@@ -551,11 +561,10 @@ _Generated via Hills Angel Admin Console_`;
         <button
           type="button"
           onClick={() => setActiveTab('ledger')}
-          className={`inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs sm:text-sm font-semibold transition-all cursor-pointer ${
-            activeTab === 'ledger'
+          className={`inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs sm:text-sm font-semibold transition-all cursor-pointer ${activeTab === 'ledger'
               ? 'bg-white text-[#192D20] shadow-sm'
               : 'text-gray-600 hover:text-gray-900'
-          }`}
+            }`}
         >
           <Receipt className="w-4 h-4 text-emerald-600" />
           <span>Commission & Payout Ledger</span>
@@ -567,11 +576,10 @@ _Generated via Hills Angel Admin Console_`;
         <button
           type="button"
           onClick={() => setActiveTab('calculator')}
-          className={`inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs sm:text-sm font-semibold transition-all cursor-pointer ${
-            activeTab === 'calculator'
+          className={`inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs sm:text-sm font-semibold transition-all cursor-pointer ${activeTab === 'calculator'
               ? 'bg-white text-[#192D20] shadow-sm'
               : 'text-gray-600 hover:text-gray-900'
-          }`}
+            }`}
         >
           <Calculator className="w-4 h-4 text-amber-600" />
           <span>Trip Net Profit Calculator</span>
@@ -580,11 +588,10 @@ _Generated via Hills Angel Admin Console_`;
         <button
           type="button"
           onClick={() => setActiveTab('manage')}
-          className={`inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs sm:text-sm font-semibold transition-all cursor-pointer ${
-            activeTab === 'manage'
+          className={`inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs sm:text-sm font-semibold transition-all cursor-pointer ${activeTab === 'manage'
               ? 'bg-white text-[#192D20] shadow-sm'
               : 'text-gray-600 hover:text-gray-900'
-          }`}
+            }`}
         >
           <Users className="w-4 h-4 text-blue-600" />
           <span>Manage Partners & Share % ({partners.length})</span>
@@ -593,16 +600,42 @@ _Generated via Hills Angel Admin Console_`;
         <button
           type="button"
           onClick={() => setActiveTab('defaults')}
-          className={`inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs sm:text-sm font-semibold transition-all cursor-pointer ${
-            activeTab === 'defaults'
+          className={`inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs sm:text-sm font-semibold transition-all cursor-pointer ${activeTab === 'defaults'
               ? 'bg-white text-[#192D20] shadow-sm'
               : 'text-gray-600 hover:text-gray-900'
-          }`}
+            }`}
         >
           <Settings className="w-4 h-4 text-purple-600" />
           <span>⚙️ Pre-Set Master Rates (விலை நிர்ணயம்)</span>
         </button>
+
+        <button
+          type="button"
+          onClick={() => setActiveTab('expenses')}
+          className={`inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs sm:text-sm font-semibold transition-all cursor-pointer ${activeTab === 'expenses'
+              ? 'bg-white text-[#192D20] shadow-sm'
+              : 'text-gray-600 hover:text-gray-900'
+            }`}
+        >
+          <Car className="w-4 h-4 text-rose-600" />
+          <span>Asset & Vehicle Expenses (பார்ட்னர் செலவுகள்)</span>
+          <span className="text-[10px] px-2 py-0.5 rounded-full bg-rose-100 text-rose-800 font-bold">
+            Accounts
+          </span>
+        </button>
       </div>
+
+      {/* ================= TAB 0: ASSET & VEHICLE EXPENSES ================= */}
+      {activeTab === 'expenses' && (
+        <AssetExpenseLedger
+          companyPartners={partners.map((p) => ({
+            id: p.id,
+            name: p.name,
+            phone: p.phone,
+            upiId: p.upiId,
+          }))}
+        />
+      )}
 
       {/* ================= TAB 1: COMMISSION & SETTLEMENT LEDGER ================= */}
       {activeTab === 'ledger' && (
@@ -1035,11 +1068,10 @@ _Generated via Hills Angel Admin Console_`;
 
             <div className="flex items-center gap-3">
               <span
-                className={`text-xs font-bold px-3 py-1.5 rounded-xl border flex items-center gap-1.5 ${
-                  totalShareAllocated === 100
+                className={`text-xs font-bold px-3 py-1.5 rounded-xl border flex items-center gap-1.5 ${totalShareAllocated === 100
                     ? 'bg-emerald-50 text-emerald-700 border-emerald-300'
                     : 'bg-amber-50 text-amber-700 border-amber-300'
-                }`}
+                  }`}
               >
                 <span>Total Allocated: {totalShareAllocated}%</span>
                 {totalShareAllocated === 100 && <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />}
@@ -1095,7 +1127,7 @@ _Generated via Hills Angel Admin Console_`;
                       type="text"
                       value={partner.name}
                       onChange={(e) => handleUpdatePartner(index, 'name', e.target.value)}
-                      placeholder="e.g. Mahesh"
+                      placeholder="e.g. mohan"
                       className="w-full px-3 py-2 rounded-xl border border-gray-200 text-xs font-semibold"
                     />
                   </div>

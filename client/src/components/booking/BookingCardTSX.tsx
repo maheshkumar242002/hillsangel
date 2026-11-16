@@ -1,5 +1,5 @@
 import React from 'react';
-import { Eye, MessageCircle, Phone, MapPin, Calendar, Users } from 'lucide-react';
+import { Eye, MessageCircle, Phone, MapPin, Calendar, Users, Car, Key, UserCheck } from 'lucide-react';
 import { IBooking, BookingStatus } from '../../types';
 import TierBadge from '../common/TierBadge';
 import CategoryChip from '../common/CategoryChip';
@@ -19,23 +19,46 @@ export const BookingCardTSX: React.FC<BookingCardTSXProps> = ({
   onViewDetails,
 }) => {
   const bookingId = booking._id || booking.id || '';
+  const cf = booking.customFeatures;
+  const isRentalWithDriver =
+    booking.bookingType === 'vehicle_rental_with_driver' ||
+    (booking.bookingType === 'vehicle_rental' && cf?.rentalOption === 'with_driver');
+  const isRentalWithoutDriver =
+    booking.bookingType === 'vehicle_rental_without_driver' ||
+    (booking.bookingType === 'vehicle_rental' && cf?.rentalOption === 'without_driver');
+  const isVehicleRental = isRentalWithDriver || isRentalWithoutDriver;
 
   return (
     <div className="bg-white rounded-2xl border border-gray-100 p-5 shadow-sm space-y-4 hover:shadow-md transition-shadow">
       {/* Top Header: Booking ID & Status Dropdown */}
       <div className="flex items-center justify-between gap-2">
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           <span className="font-mono font-bold text-xs text-primary-dark tracking-wide bg-primary-light/40 px-2.5 py-1 rounded-lg">
             {booking.bookingId}
           </span>
-          <CategoryChip
-            category={booking.packageSnapshot?.category}
-            showLabel={false}
-          />
-          <TierBadge
-            tier={booking.packageSnapshot?.tier}
-            size="sm"
-          />
+
+          {isRentalWithoutDriver ? (
+            <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full bg-purple-100 text-purple-800 border border-purple-200">
+              <Key className="w-3 h-3 text-purple-600" />
+              <span>Self-Drive</span>
+            </span>
+          ) : isRentalWithDriver ? (
+            <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-200">
+              <UserCheck className="w-3 h-3 text-emerald-600" />
+              <span>With Driver</span>
+            </span>
+          ) : (
+            <>
+              <CategoryChip
+                category={booking.packageSnapshot?.category}
+                showLabel={false}
+              />
+              <TierBadge
+                tier={booking.packageSnapshot?.tier}
+                size="sm"
+              />
+            </>
+          )}
         </div>
 
         {/* Status Dropdown */}

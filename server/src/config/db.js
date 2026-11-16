@@ -59,12 +59,16 @@ export const connectDB = async () => {
     await sequelize.authenticate();
     console.log(`[DB] ✅ Connected to MySQL database "${database}" successfully.`);
 
-    // 3. Sync all models to create missing tables
-    try {
-      await sequelize.sync();
-      console.log('[DB] ✅ All Sequelize models synchronized with MySQL tables.');
-    } catch (syncErr) {
-      console.warn('[DB] Sync notice:', syncErr.message);
+    // 3. Sync all models safely (only create missing tables; never alter or duplicate existing indexes)
+    if (process.env.NODE_ENV !== 'production' || process.env.AUTO_SYNC_DB === 'true') {
+      try {
+        await sequelize.sync({ alter: false });
+        console.log('[DB] ✅ All Sequelize models synchronized with MySQL tables.');
+      } catch (syncErr) {
+        console.warn('[DB] Sync notice:', syncErr.message);
+      }
+    } else {
+      console.log('[DB] Production mode: Auto-sync disabled (use migration scripts).');
     }
 
     return sequelize;

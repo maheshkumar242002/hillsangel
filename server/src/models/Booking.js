@@ -102,9 +102,9 @@ Booking.init(
       defaultValue: null,
     },
     totalPrice: {
-      type: DataTypes.FLOAT,
+      type: DataTypes.DECIMAL(12, 2),
       allowNull: false,
-      defaultValue: 0,
+      defaultValue: 0.0,
     },
     status: {
       type: DataTypes.ENUM('pending', 'confirmed', 'in_progress', 'cancelled', 'completed'),

@@ -7,14 +7,14 @@ import {
   deleteDriver,
   uploadDriverPhoto,
 } from '../controllers/driverController.js';
-import { protectAdmin } from '../middleware/auth.js';
+import { protectAdmin, optionalAdmin } from '../middleware/auth.js';
 import { upload } from '../middleware/upload.js';
 
 const router = express.Router();
 
-// Public / Authenticated route to get list of drivers
-router.get('/', getDrivers);
-router.get('/:id', getDriverById);
+// Public / Authenticated route to get list of drivers (sensitive fields filtered for non-admins)
+router.get('/', optionalAdmin, getDrivers);
+router.get('/:id', optionalAdmin, getDriverById);
 
 // Admin-protected CRUD & photo upload
 router.post('/upload', protectAdmin, upload.single('photo'), uploadDriverPhoto);

@@ -23,6 +23,8 @@ import {
   Clock,
   Database,
   Users,
+  Receipt,
+  IndianRupee,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useVehicleStore, useConnectionStore, useDriverStore } from '../../store';
@@ -416,13 +418,21 @@ export default function AdminVehicles(): React.ReactElement {
                 </div>
               </div>
               <p className="text-xs text-muted">
-                100% Real MySQL Fleet • Driver Master Link • Image Uploads & Mandatory Pre-Trip Photo Checks
+                100% Real Fleet • Driver Master Link • Image Uploads & Mandatory Pre-Trip Photo Checks
               </p>
             </div>
           </div>
         </div>
 
         <div className="flex items-center gap-2">
+          <Link
+            to="/admin/company-partners?tab=expenses"
+            className="flex items-center gap-1.5 px-3 py-2 border border-rose-200 bg-rose-50 text-rose-700 hover:bg-rose-100 text-xs font-semibold rounded-xl transition-all shadow-2xs"
+            title="View partner expenses & accounts for fleet"
+          >
+            <Receipt className="w-4 h-4 text-rose-600" />
+            <span>Vehicle Expenses</span>
+          </Link>
           <Link
             to="/admin/drivers"
             className="flex items-center gap-1.5 px-3 py-2 border border-purple-200 bg-purple-50 text-purple-700 hover:bg-purple-100 text-xs font-semibold rounded-xl transition-all shadow-2xs"
@@ -493,7 +503,7 @@ export default function AdminVehicles(): React.ReactElement {
       {loading ? (
         <div className="p-12 text-center bg-white rounded-2xl border border-gray-200">
           <Loader2 className="w-8 h-8 animate-spin text-primary mx-auto mb-2" />
-          <p className="text-xs text-muted">Loading fleet master records from MySQL database...</p>
+          <p className="text-xs text-muted">Loading fleet master records ...</p>
         </div>
       ) : filteredVehicles.length === 0 ? (
         <div className="p-12 text-center bg-white rounded-2xl border border-gray-200 space-y-3">
@@ -800,6 +810,15 @@ export default function AdminVehicles(): React.ReactElement {
                           </span>
                         )}
                       </button>
+
+                      <Link
+                        to="/admin/company-partners?tab=expenses"
+                        className="p-2 border border-rose-200 bg-rose-50/60 hover:bg-rose-100 rounded-xl text-rose-700 text-xs font-semibold flex items-center gap-1 transition-colors"
+                        title="Log or view expenses for this vehicle"
+                      >
+                        <IndianRupee className="w-3.5 h-3.5" />
+                        <span>Expense</span>
+                      </Link>
                     </div>
 
                     <div className="flex items-center justify-between text-[10px] text-muted">

@@ -44,3 +44,29 @@ export const protectAdmin = async (req, res, next) => {
     });
   }
 };
+
+export const authenticate = protectAdmin;
+
+export const optionalAdmin = async (req, res, next) => {
+  let token = null;
+  if (req.cookies && req.cookies.adminToken) {
+    token = req.cookies.adminToken;
+  } else if (req.headers.authorization && req.headers.authorization.startsWith('Bearer')) {
+    token = req.headers.authorization.split(' ')[1];
+  }
+
+  if (token) {
+    try {
+      const decoded = jwt.verify(token, process.env.JWT_SECRET || 'hills_angels_jwt_secret');
+      const admin = await Admin.findByPk(decoded.id, {
+        attributes: { exclude: ['password'] },
+      });
+      if (admin) {
+        req.admin = admin;
+      }
+    } catch (e) {
+      // Ignore token failure in optional middleware
+    }
+  }
+  next();
+};

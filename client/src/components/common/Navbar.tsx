@@ -40,6 +40,7 @@ export const Navbar: React.FC = () => {
   const navLinks = [
     { name: 'Home', path: '/' },
     { name: 'Tour Packages', path: '/packages' },
+    { name: 'Vehicle Rentals', path: '/rentals' },
     { name: 'Special Features', path: '/#special-features' },
     { name: 'About Us', path: '/about' },
     { name: 'Gallery', path: '/gallery' },
@@ -48,7 +49,7 @@ export const Navbar: React.FC = () => {
 
   const whatsappDirect = getWhatsAppUrl(
     settings.whatsappNumber,
-    '🌿 Hello El Shaddai Jeep Safari! I would like to enquire about your Munnar 4x4 packages.'
+    '🌿 Hello Hills Angel Tours! I would like to enquire about your tour packages and 4x4 safaris.'
   );
 
   return (

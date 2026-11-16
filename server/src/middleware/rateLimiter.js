@@ -15,7 +15,7 @@ export const generalLimiter = rateLimit({
 // Stricter rate limiter for booking creation to prevent spam
 export const bookingLimiter = rateLimit({
   windowMs: 10 * 60 * 1000, // 10 minutes
-  max: 20, // 20 bookings per 10 min
+  max: process.env.NODE_ENV === 'test' ? 1000 : 100, // 100 bookings per 10 min window
   standardHeaders: true,
   legacyHeaders: false,
   message: {

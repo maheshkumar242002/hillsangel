@@ -694,7 +694,7 @@ export default function AdminDrivers(): React.ReactElement {
                   <h2 className="text-sm font-bold text-gray-900">
                     {editingDriver ? `Edit Pilot: ${editingDriver.name}` : 'Register New Mountain Pilot'}
                   </h2>
-                  <p className="text-[11px] text-gray-400">MySQL Database Driver Master</p>
+                  <p className="text-[11px] text-gray-400"> Driver Master</p>
                 </div>
               </div>
               <button
