@@ -1,357 +1,166 @@
-import { Op } from 'sequelize';
-import AssetExpense from '../models/AssetExpense.js';
-import Vehicle from '../models/Vehicle.js';
-import Asset from '../models/Asset.js';
-import Settings from '../models/Settings.js';
-import sequelize from '../config/db.js';
+import expenseService from '../service/expenseService.js';
+import { ApiResponse } from '../common/index.js';
+import { ExpenseCategory, ExpenseEntityType, PaymentMode } from '../enums/index.js';
+
+/**
+ * Expense Controller
+ * RESPONSIBILITY: Request validation, parameter parsing, calling ExpenseService, and returning API responses.
+ * (Database operations are handled in ExpenseRepository; Business logic & auto-links are handled in ExpenseService)
+ */
 
 // @desc    Get all asset and vehicle expenses with filters & stats
 // @route   GET /api/expenses
 // @access  Admin Protected
 export const getExpenses = async (req, res, next) => {
   try {
-    const {
-      search,
-      entityType,
-      vehicleId,
-      assetId,
-      category,
-      paidByPartnerId,
-      status,
-      startDate,
-      endDate,
-      sort = 'expenseDate_desc',
-    } = req.query;
+    const { category, entityType, paymentMode } = req.query;
 
-    const where = {};
-
-    if (entityType && entityType !== 'all') {
-      where.entityType = entityType;
+    // VALIDATION ONLY
+    if (category && category !== 'all' && !Object.values(ExpenseCategory).includes(category)) {
+      return ApiResponse.badRequest(res, `Invalid category. Allowed: ${Object.values(ExpenseCategory).join(', ')}`);
     }
-    if (vehicleId && vehicleId !== 'all') {
-      where.vehicleId = vehicleId;
+    if (entityType && entityType !== 'all' && !Object.values(ExpenseEntityType).includes(entityType)) {
+      return ApiResponse.badRequest(res, `Invalid entityType. Allowed: ${Object.values(ExpenseEntityType).join(', ')}`);
     }
-    if (assetId && assetId !== 'all') {
-      where.assetId = assetId;
-    }
-    if (category && category !== 'all') {
-      where.category = category;
-    }
-    if (paidByPartnerId && paidByPartnerId !== 'all') {
-      where.paidByPartnerId = paidByPartnerId;
-    }
-    if (status && status !== 'all') {
-      where.status = status;
+    if (paymentMode && paymentMode !== 'all' && !Object.values(PaymentMode).includes(paymentMode)) {
+      return ApiResponse.badRequest(res, `Invalid paymentMode. Allowed: ${Object.values(PaymentMode).join(', ')}`);
     }
 
-    if (startDate && endDate) {
-      where.expenseDate = {
-        [Op.between]: [startDate, endDate],
-      };
-    } else if (startDate) {
-      where.expenseDate = {
-        [Op.gte]: startDate,
-      };
-    } else if (endDate) {
-      where.expenseDate = {
-        [Op.lte]: endDate,
-      };
-    }
+    const result = await expenseService.getExpenses(req.query);
 
-    if (search && search.trim() !== '') {
-      const term = `%${search.trim()}%`;
-      where[Op.or] = [
-        { expenseCode: { [Op.like]: term } },
-        { title: { [Op.like]: term } },
-        { vehicleReg: { [Op.like]: term } },
-        { vehicleName: { [Op.like]: term } },
-        { assetName: { [Op.like]: term } },
-        { assetCode: { [Op.like]: term } },
-        { paidByPartnerName: { [Op.like]: term } },
-        { paymentRef: { [Op.like]: term } },
-        { notes: { [Op.like]: term } },
-      ];
-    }
-
-    let order = [['expenseDate', 'DESC'], ['id', 'DESC']];
-    if (sort === 'expenseDate_asc') order = [['expenseDate', 'ASC'], ['id', 'ASC']];
-    else if (sort === 'amount_desc') order = [['amount', 'DESC']];
-    else if (sort === 'amount_asc') order = [['amount', 'ASC']];
-
-    const expenses = await AssetExpense.findAll({
-      where,
-      order,
-    });
-
-    res.status(200).json({
-      success: true,
-      count: expenses.length,
-      expenses,
+    return ApiResponse.success(res, result.expenses, 'Expenses retrieved successfully', {
+      count: result.count,
+      total: result.total,
+      totalPages: result.totalPages,
+      currentPage: result.currentPage,
     });
   } catch (error) {
     next(error);
   }
 };
 
-// @desc    Get detailed statistics and partner accounts summary
-// @route   GET /api/expenses/stats
+// @desc    Get single expense by ID
+// @route   GET /api/expenses/:id
 // @access  Admin Protected
-export const getExpenseStats = async (req, res, next) => {
+export const getExpenseById = async (req, res, next) => {
   try {
-    const allExpenses = await AssetExpense.findAll();
+    const { id } = req.params;
 
-    const totalExpenseAmount = allExpenses.reduce((sum, e) => sum + (Number(e.amount) || 0), 0);
-    const totalTransactions = allExpenses.length;
+    // VALIDATION ONLY
+    if (!id || isNaN(Number(id))) {
+      return ApiResponse.badRequest(res, 'Valid numeric Expense ID is required.');
+    }
 
-    // Entity Breakdown (Vehicle vs Asset vs General)
-    const entityBreakdown = {
-      vehicle: { count: 0, amount: 0 },
-      asset: { count: 0, amount: 0 },
-      general: { count: 0, amount: 0 },
-    };
+    const expense = await expenseService.getById(Number(id));
 
-    // Category Breakdown
-    const categoryBreakdown = {};
-
-    // Partner Accounts Breakdown
-    const partnerAccountsMap = {};
-
-    // Vehicle Specific Breakdown
-    const vehicleBreakdownMap = {};
-
-    // Status breakdown
-    let totalPendingReimbursement = 0;
-    let totalReimbursed = 0;
-    let totalDirectCompany = 0;
-
-    allExpenses.forEach((exp) => {
-      const amt = Number(exp.amount) || 0;
-
-      // Entity
-      const entity = exp.entityType || 'vehicle';
-      if (entityBreakdown[entity]) {
-        entityBreakdown[entity].count += 1;
-        entityBreakdown[entity].amount += amt;
-      }
-
-      // Category
-      const cat = exp.category || 'other';
-      if (!categoryBreakdown[cat]) {
-        categoryBreakdown[cat] = { count: 0, amount: 0 };
-      }
-      categoryBreakdown[cat].count += 1;
-      categoryBreakdown[cat].amount += amt;
-
-      // Partner Accounts
-      const pId = exp.paidByPartnerId || 'unknown';
-      const pName = exp.paidByPartnerName || 'Unknown Partner';
-
-      if (!partnerAccountsMap[pId]) {
-        partnerAccountsMap[pId] = {
-          partnerId: pId,
-          partnerName: pName,
-          totalPaid: 0,
-          reimbursed: 0,
-          pendingReimbursement: 0,
-          directCompany: 0,
-          expenseCount: 0,
-        };
-      }
-
-      partnerAccountsMap[pId].totalPaid += amt;
-      partnerAccountsMap[pId].expenseCount += 1;
-
-      if (exp.status === 'reimbursed') {
-        partnerAccountsMap[pId].reimbursed += amt;
-        totalReimbursed += amt;
-      } else if (exp.status === 'direct_company') {
-        partnerAccountsMap[pId].directCompany += amt;
-        totalDirectCompany += amt;
-      } else {
-        partnerAccountsMap[pId].pendingReimbursement += amt;
-        totalPendingReimbursement += amt;
-      }
-
-      // Vehicle
-      if (exp.vehicleReg || exp.vehicleName) {
-        const vKey = exp.vehicleReg || exp.vehicleName;
-        if (!vehicleBreakdownMap[vKey]) {
-          vehicleBreakdownMap[vKey] = {
-            vehicleReg: exp.vehicleReg || '',
-            vehicleName: exp.vehicleName || vKey,
-            vehicleId: exp.vehicleId,
-            totalExpense: 0,
-            expenseCount: 0,
-            fuelExpense: 0,
-            serviceExpense: 0,
-            insuranceExpense: 0,
-            otherExpense: 0,
-          };
-        }
-        vehicleBreakdownMap[vKey].totalExpense += amt;
-        vehicleBreakdownMap[vKey].expenseCount += 1;
-        if (exp.category === 'fuel') vehicleBreakdownMap[vKey].fuelExpense += amt;
-        else if (exp.category === 'service_maintenance' || exp.category === 'repair_parts') vehicleBreakdownMap[vKey].serviceExpense += amt;
-        else if (exp.category === 'insurance' || exp.category === 'fc_permit') vehicleBreakdownMap[vKey].insuranceExpense += amt;
-        else vehicleBreakdownMap[vKey].otherExpense += amt;
-      }
-    });
-
-    const partnerAccounts = Object.values(partnerAccountsMap);
-    const vehicleBreakdown = Object.values(vehicleBreakdownMap);
-
-    res.status(200).json({
-      success: true,
-      stats: {
-        totalExpenseAmount,
-        totalTransactions,
-        totalPendingReimbursement,
-        totalReimbursed,
-        totalDirectCompany,
-        entityBreakdown,
-        categoryBreakdown,
-        partnerAccounts,
-        vehicleBreakdown,
-      },
-    });
+    return ApiResponse.success(res, expense, 'Expense details retrieved successfully');
   } catch (error) {
+    if (error.statusCode === 404) return ApiResponse.notFound(res, error.message);
     next(error);
   }
 };
 
-// @desc    Create a new asset or vehicle expense
+// @desc    Create new expense entry
 // @route   POST /api/expenses
 // @access  Admin Protected
 export const createExpense = async (req, res, next) => {
   try {
-    const data = { ...req.body };
+    const { title, amount, category, entityType } = req.body;
 
-    // Auto generate unique expenseCode
-    const now = new Date();
-    const yr = now.getFullYear();
-    const mo = String(now.getMonth() + 1).padStart(2, '0');
-    const rand = Math.floor(1000 + Math.random() * 9000);
-    data.expenseCode = `EXP-${yr}${mo}-${rand}`;
-
-    // Auto populate vehicle info if vehicleId provided
-    if (data.vehicleId) {
-      const v = await Vehicle.findByPk(data.vehicleId);
-      if (v) {
-        data.vehicleReg = v.regNumber;
-        data.vehicleName = v.name;
-        data.entityType = 'vehicle';
-      }
+    // 1. INPUT VALIDATION ONLY
+    const errors = [];
+    if (!title || typeof title !== 'string' || title.trim().length < 2) {
+      errors.push('Expense title is required (at least 2 characters).');
+    }
+    if (amount === undefined || isNaN(Number(amount)) || Number(amount) <= 0) {
+      errors.push('Amount must be a positive number greater than 0.');
+    }
+    if (category && !Object.values(ExpenseCategory).includes(category)) {
+      errors.push(`Invalid category. Allowed: ${Object.values(ExpenseCategory).join(', ')}`);
+    }
+    if (entityType && !Object.values(ExpenseEntityType).includes(entityType)) {
+      errors.push(`Invalid entityType. Allowed: ${Object.values(ExpenseEntityType).join(', ')}`);
     }
 
-    // Auto populate asset info if assetId provided
-    if (data.assetId) {
-      const a = await Asset.findByPk(data.assetId);
-      if (a) {
-        data.assetCode = a.assetCode;
-        data.assetName = a.name;
-        data.entityType = 'asset';
-      }
+    if (errors.length > 0) {
+      return ApiResponse.badRequest(res, 'Validation failed for expense creation.', errors);
     }
 
-    // Fallback partner name if not provided
-    if (!data.paidByPartnerName) {
-      data.paidByPartnerName = data.paidByPartnerId === 'company' ? 'Company Account' : 'Managing Partner';
-    }
+    // 2. CALL SERVICE LAYER
+    const createdExpense = await expenseService.createExpense(req.body);
 
-    const expense = await AssetExpense.create(data);
-
-    res.status(201).json({
-      success: true,
-      message: `Expense ${expense.expenseCode} recorded successfully`,
-      expense,
-    });
+    // 3. RETURN STANDARDIZED API RESPONSE (201 Created)
+    return ApiResponse.created(res, createdExpense, 'Expense entry created successfully.');
   } catch (error) {
     next(error);
   }
 };
 
-// @desc    Update an expense record
+// @desc    Update existing expense
 // @route   PUT /api/expenses/:id
 // @access  Admin Protected
 export const updateExpense = async (req, res, next) => {
   try {
-    const expense = await AssetExpense.findByPk(req.params.id);
-    if (!expense) {
-      return res.status(404).json({
-        success: false,
-        message: 'Expense record not found',
-      });
+    const { id } = req.params;
+
+    // VALIDATION ONLY
+    if (!id || isNaN(Number(id))) {
+      return ApiResponse.badRequest(res, 'Valid numeric Expense ID is required.');
     }
 
-    const data = { ...req.body };
-    delete data.id;
-    delete data.expenseCode; // Preserve generated code
+    const updated = await expenseService.updateExpense(Number(id), req.body);
 
-    await expense.update(data);
-
-    res.status(200).json({
-      success: true,
-      message: 'Expense record updated successfully',
-      expense,
-    });
+    return ApiResponse.success(res, updated, 'Expense updated successfully.');
   } catch (error) {
+    if (error.statusCode === 404) return ApiResponse.notFound(res, error.message);
     next(error);
   }
 };
 
-// @desc    Mark an expense as reimbursed / settled to partner
-// @route   PATCH /api/expenses/:id/reimburse
+// @desc    Reimburse an expense
+// @route   POST /api/expenses/:id/reimburse
 // @access  Admin Protected
 export const reimburseExpense = async (req, res, next) => {
   try {
-    const expense = await AssetExpense.findByPk(req.params.id);
-    if (!expense) {
-      return res.status(404).json({
-        success: false,
-        message: 'Expense record not found',
-      });
+    const { id } = req.params;
+
+    // VALIDATION ONLY
+    if (!id || isNaN(Number(id))) {
+      return ApiResponse.badRequest(res, 'Valid numeric Expense ID is required.');
     }
 
-    const { status = 'reimbursed', reimbursementRef, notes } = req.body;
+    const reimbursed = await expenseService.reimburseExpense(Number(id), req.body);
 
-    expense.status = status;
-    expense.reimbursedAt = status === 'reimbursed' ? new Date().toISOString().split('T')[0] : null;
-    if (reimbursementRef) expense.reimbursementRef = reimbursementRef;
-    if (notes) expense.notes = expense.notes ? `${expense.notes}\n[Settlement]: ${notes}` : `[Settlement]: ${notes}`;
-
-    await expense.save();
-
-    res.status(200).json({
-      success: true,
-      message: `Expense ${expense.expenseCode} marked as ${status}`,
-      expense,
-    });
+    return ApiResponse.success(res, reimbursed, 'Expense reimbursed successfully.');
   } catch (error) {
+    if (error.statusCode === 404) return ApiResponse.notFound(res, error.message);
     next(error);
   }
 };
 
-// @desc    Delete an expense
+// @desc    Delete an expense (Supports Soft Delete & Hard Delete)
 // @route   DELETE /api/expenses/:id
+// @query   hard=true (Optional: permanent deletion; default false sets isDelete: true)
 // @access  Admin Protected
 export const deleteExpense = async (req, res, next) => {
   try {
-    const expense = await AssetExpense.findByPk(req.params.id);
-    if (!expense) {
-      return res.status(404).json({
-        success: false,
-        message: 'Expense record not found',
-      });
+    const { id } = req.params;
+
+    // VALIDATION ONLY
+    if (!id || isNaN(Number(id))) {
+      return ApiResponse.badRequest(res, 'Valid numeric Expense ID is required.');
     }
 
-    await expense.destroy();
+    const isHard = req.query.hard === 'true' || req.body?.hard === true;
+    const result = await expenseService.delete(Number(id), { hard: isHard });
 
-    res.status(200).json({
-      success: true,
-      message: 'Expense record deleted successfully',
-    });
+    if (isHard) {
+      return ApiResponse.success(res, result, `Expense #${id} permanently deleted from database (Hard Delete)`);
+    }
+
+    return ApiResponse.success(res, result, `Expense #${id} moved to trash (Soft Delete: isDelete set to true)`);
   } catch (error) {
+    if (error.statusCode === 404) return ApiResponse.notFound(res, error.message);
     next(error);
   }
 };
-

@@ -211,6 +211,16 @@ Vehicle.init(
       type: DataTypes.INTEGER,
       defaultValue: 0,
     },
+    isDelete: {
+      type: DataTypes.BOOLEAN,
+      defaultValue: false,
+      allowNull: false,
+    },
+    deletedAt: {
+      type: DataTypes.DATE,
+      allowNull: true,
+      defaultValue: null,
+    },
   },
   {
     sequelize,

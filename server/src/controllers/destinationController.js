@@ -1,434 +1,179 @@
-import { Op, Sequelize } from 'sequelize';
-import Destination from '../models/Destination.js';
-import PartnerTieup from '../models/PartnerTieup.js';
-import Package from '../models/Package.js';
+import destinationService from '../service/destinationService.js';
+import { ApiResponse } from '../common/index.js';
+
+/**
+ * Destination Controller
+ * RESPONSIBILITY: Request validation, parameter parsing, calling DestinationService, and returning API responses.
+ * (Database operations are handled in DestinationRepository; Business logic & KPI aggregations are handled in DestinationService)
+ */
 
 // @desc    Get all destinations with filters, search, and live partner/package counts
 // @route   GET /api/destinations
 // @access  Public / Admin
 export const getDestinations = async (req, res, next) => {
   try {
-    const { search, state, status, sort = 'sortOrder' } = req.query;
+    const destinations = await destinationService.getDestinationsWithStats(req.query);
 
-    const where = {};
-    if (status && status !== 'all') {
-      where.status = status;
-    }
-    if (state && state !== 'all') {
-      where.state = state;
-    }
-    if (search && search.trim() !== '') {
-      const term = `%${search.trim()}%`;
-      where[Op.or] = [
-        { name: { [Op.like]: term } },
-        { state: { [Op.like]: term } },
-        { tagline: { [Op.like]: term } },
-      ];
-    }
-
-    let order = [['sortOrder', 'ASC'], ['name', 'ASC']];
-    if (sort === 'name') order = [['name', 'ASC']];
-    if (sort === 'state') order = [['state', 'ASC']];
-    if (sort === 'newest') order = [['createdAt', 'DESC']];
-
-    const destinations = await Destination.findAll({ where, order });
-
-    // BUG-012 Fix: Perform database-level aggregation via GROUP BY instead of in-memory array filtering
-    const [partnerCounts, packageCounts] = await Promise.all([
-      PartnerTieup.findAll({
-        attributes: [
-          [Sequelize.fn('LOWER', Sequelize.fn('TRIM', Sequelize.col('location'))), 'loc'],
-          [Sequelize.fn('LOWER', Sequelize.fn('TRIM', Sequelize.col('subLocation'))), 'subLoc'],
-          'category',
-          [Sequelize.fn('COUNT', Sequelize.col('id')), 'cnt'],
-        ],
-        group: [
-          Sequelize.fn('LOWER', Sequelize.fn('TRIM', Sequelize.col('location'))),
-          Sequelize.fn('LOWER', Sequelize.fn('TRIM', Sequelize.col('subLocation'))),
-          'category',
-        ],
-        raw: true,
-      }),
-      Package.findAll({
-        attributes: [
-          [Sequelize.fn('LOWER', Sequelize.fn('TRIM', Sequelize.col('destination'))), 'dest'],
-          [Sequelize.fn('COUNT', Sequelize.col('id')), 'cnt'],
-        ],
-        group: [Sequelize.fn('LOWER', Sequelize.fn('TRIM', Sequelize.col('destination')))],
-        raw: true,
-      }),
-    ]);
-
-    const enriched = destinations.map((d) => {
-      const destObj = d.toJSON();
-      const destNameLower = (d.name || '').toLowerCase().trim();
-
-      // Filter from aggregated location groups
-      const matchingPartners = partnerCounts.filter((p) => {
-        const pLoc = p.loc || '';
-        return pLoc === destNameLower || pLoc.includes(destNameLower) || destNameLower.includes(pLoc);
-      });
-
-      const lodgesCount = matchingPartners
-        .filter((p) => p.category === 'stay')
-        .reduce((sum, p) => sum + (Number(p.cnt) || 0), 0);
-
-      const restaurantsCount = matchingPartners
-        .filter((p) => p.category === 'food')
-        .reduce((sum, p) => sum + (Number(p.cnt) || 0), 0);
-
-      const packagesCount = packageCounts
-        .filter((pkg) => {
-          const pkgDest = pkg.dest || '';
-          return pkgDest === destNameLower || pkgDest.includes(destNameLower) || destNameLower.includes(pkgDest);
-        })
-        .reduce((sum, pkg) => sum + (Number(pkg.cnt) || 0), 0);
-
-      // Group sub-location counts from aggregated groups
-      const subLocations = Array.isArray(destObj.subLocations) ? destObj.subLocations : [];
-      const subLocationBreakdown = subLocations.map((subLoc) => {
-        const subLower = (subLoc || '').toLowerCase().trim();
-        const subLodges = matchingPartners
-          .filter((p) => p.category === 'stay' && (p.subLoc || '') === subLower)
-          .reduce((sum, p) => sum + (Number(p.cnt) || 0), 0);
-        const subRestaurants = matchingPartners
-          .filter((p) => p.category === 'food' && (p.subLoc || '') === subLower)
-          .reduce((sum, p) => sum + (Number(p.cnt) || 0), 0);
-        return {
-          name: subLoc,
-          lodgesCount: subLodges,
-          restaurantsCount: subRestaurants,
-        };
-      });
-
-      return {
-        ...destObj,
-        lodgesCount,
-        restaurantsCount,
-        packagesCount,
-        subLocationsCount: subLocations.length,
-        subLocationBreakdown,
-      };
+    return ApiResponse.success(res, destinations, 'Destinations retrieved successfully', {
+      count: destinations.length,
     });
-
-    res.status(200).json({
-      success: true,
-      count: enriched.length,
-      destinations: enriched,
-    });
-  } catch (err) {
-    next(err);
+  } catch (error) {
+    next(error);
   }
 };
 
-// @desc    Get single destination by ID or Name with associated partners and packages
+// @desc    Get single destination with sub-locations & attractions
 // @route   GET /api/destinations/:id
-// @access  Public
+// @access  Public / Admin
 export const getDestinationById = async (req, res, next) => {
   try {
     const { id } = req.params;
-    let destination;
 
-    if (!isNaN(parseInt(id, 10))) {
-      destination = await Destination.findByPk(id);
-    }
-    if (!destination) {
-      destination = await Destination.findOne({
-        where: { name: id },
-      });
+    // VALIDATION ONLY
+    if (!id || isNaN(Number(id))) {
+      return ApiResponse.badRequest(res, 'Valid numeric Destination ID is required.');
     }
 
-    if (!destination) {
-      return res.status(404).json({
-        success: false,
-        message: 'Destination not found',
-      });
-    }
+    const destination = await destinationService.getById(Number(id));
 
-    const destObj = destination.toJSON();
-    const destNameLower = destObj.name.toLowerCase().trim();
-
-    // Fetch related partners and packages
-    const [partners, packages] = await Promise.all([
-      PartnerTieup.findAll({
-        where: {
-          [Op.or]: [
-            { location: { [Op.like]: `%${destObj.name}%` } },
-            { address: { [Op.like]: `%${destObj.name}%` } },
-          ],
-        },
-      }),
-      Package.findAll({
-        where: {
-          destination: { [Op.like]: `%${destObj.name}%` },
-        },
-      }),
-    ]);
-
-    const lodges = partners.filter((p) => p.category === 'stay');
-    const restaurants = partners.filter((p) => p.category === 'food');
-
-    res.status(200).json({
-      success: true,
-      destination: {
-        ...destObj,
-        lodges,
-        restaurants,
-        packages,
-        lodgesCount: lodges.length,
-        restaurantsCount: restaurants.length,
-        packagesCount: packages.length,
-      },
-    });
-  } catch (err) {
-    next(err);
+    return ApiResponse.success(res, destination, 'Destination details retrieved successfully');
+  } catch (error) {
+    if (error.statusCode === 404) return ApiResponse.notFound(res, error.message);
+    next(error);
   }
 };
 
-// @desc    Create a new destination
+// @desc    Create new hill station destination
 // @route   POST /api/destinations
-// @access  Private (Admin)
+// @access  Admin Protected
 export const createDestination = async (req, res, next) => {
   try {
-    const {
-      name,
-      state,
-      tagline,
-      description,
-      subLocations,
-      sightseeingSpots,
-      popularFor,
-      bestTimeToVisit,
-      imageUrl,
-      status,
-      sortOrder,
-    } = req.body;
+    const { name, state } = req.body;
 
-    if (!name || !name.trim()) {
-      return res.status(400).json({
-        success: false,
-        message: 'Destination name is required',
-      });
+    // 1. INPUT VALIDATION ONLY
+    const errors = [];
+    if (!name || typeof name !== 'string' || name.trim().length < 2) {
+      errors.push('Destination name must be at least 2 characters long.');
+    }
+    if (!state || typeof state !== 'string' || state.trim().length < 2) {
+      errors.push('State name is required (e.g. Kerala, Tamil Nadu).');
     }
 
-    const existing = await Destination.findOne({
-      where: { name: name.trim() },
-    });
-    if (existing) {
-      return res.status(400).json({
-        success: false,
-        message: `Destination "${name}" already exists`,
-      });
+    if (errors.length > 0) {
+      return ApiResponse.badRequest(res, 'Validation failed for destination creation.', errors);
     }
 
-    // Clean up arrays
-    const cleanSubLocations = Array.isArray(subLocations)
-      ? Array.from(new Set(subLocations.map((s) => String(s).trim()).filter(Boolean)))
-      : [];
-    const cleanSpots = Array.isArray(sightseeingSpots)
-      ? Array.from(new Set(sightseeingSpots.map((s) => String(s).trim()).filter(Boolean)))
-      : [];
-    const cleanPopularFor = Array.isArray(popularFor)
-      ? Array.from(new Set(popularFor.map((s) => String(s).trim()).filter(Boolean)))
-      : [];
+    // 2. CALL SERVICE LAYER
+    const createdDestination = await destinationService.createDestination(req.body);
 
-    const newDest = await Destination.create({
-      name: name.trim(),
-      state: state ? state.trim() : 'Kerala',
-      tagline: tagline ? tagline.trim() : '',
-      description: description ? description.trim() : '',
-      subLocations: cleanSubLocations,
-      sightseeingSpots: cleanSpots,
-      popularFor: cleanPopularFor,
-      bestTimeToVisit: bestTimeToVisit ? bestTimeToVisit.trim() : 'All Year Round',
-      imageUrl: imageUrl || '',
-      status: status || 'active',
-      sortOrder: sortOrder ? parseInt(sortOrder, 10) : 0,
-    });
-
-    res.status(201).json({
-      success: true,
-      message: 'Destination created successfully',
-      destination: newDest.toJSON(),
-    });
-  } catch (err) {
-    next(err);
+    // 3. RETURN STANDARDIZED API RESPONSE (201 Created)
+    return ApiResponse.created(
+      res,
+      createdDestination,
+      `Destination '${createdDestination.name}' created successfully.`
+    );
+  } catch (error) {
+    if (error.statusCode === 409) return ApiResponse.conflict(res, error.message);
+    next(error);
   }
 };
 
-// @desc    Update destination
+// @desc    Update destination details
 // @route   PUT /api/destinations/:id
-// @access  Private (Admin)
+// @access  Admin Protected
 export const updateDestination = async (req, res, next) => {
   try {
-    const destination = await Destination.findByPk(req.params.id);
-    if (!destination) {
-      return res.status(404).json({
-        success: false,
-        message: 'Destination not found',
-      });
+    const { id } = req.params;
+
+    // VALIDATION ONLY
+    if (!id || isNaN(Number(id))) {
+      return ApiResponse.badRequest(res, 'Valid numeric Destination ID is required.');
     }
 
-    const oldName = destination.name;
-    const {
-      name,
-      state,
-      tagline,
-      description,
-      subLocations,
-      sightseeingSpots,
-      popularFor,
-      bestTimeToVisit,
-      imageUrl,
-      status,
-      sortOrder,
-    } = req.body;
+    const updated = await destinationService.updateDestination(Number(id), req.body);
 
-    if (name && name.trim() !== oldName) {
-      const existing = await Destination.findOne({
-        where: {
-          name: name.trim(),
-          id: { [Op.ne]: destination.id },
-        },
-      });
-      if (existing) {
-        return res.status(400).json({
-          success: false,
-          message: `Destination with name "${name}" already exists`,
-        });
-      }
-      destination.name = name.trim();
-
-      // Optionally cascade update location name in partners and packages
-      await PartnerTieup.update(
-        { location: name.trim() },
-        { where: { location: oldName } }
-      );
-      await Package.update(
-        { destination: name.trim() },
-        { where: { destination: oldName } }
-      );
-    }
-
-    if (state !== undefined) destination.state = state.trim();
-    if (tagline !== undefined) destination.tagline = tagline.trim();
-    if (description !== undefined) destination.description = description.trim();
-    if (subLocations !== undefined) {
-      destination.subLocations = Array.isArray(subLocations)
-        ? Array.from(new Set(subLocations.map((s) => String(s).trim()).filter(Boolean)))
-        : [];
-    }
-    if (sightseeingSpots !== undefined) {
-      destination.sightseeingSpots = Array.isArray(sightseeingSpots)
-        ? Array.from(new Set(sightseeingSpots.map((s) => String(s).trim()).filter(Boolean)))
-        : [];
-    }
-    if (popularFor !== undefined) {
-      destination.popularFor = Array.isArray(popularFor)
-        ? Array.from(new Set(popularFor.map((s) => String(s).trim()).filter(Boolean)))
-        : [];
-    }
-    if (bestTimeToVisit !== undefined) destination.bestTimeToVisit = bestTimeToVisit.trim();
-    if (imageUrl !== undefined) destination.imageUrl = imageUrl;
-    if (status !== undefined) destination.status = status;
-    if (sortOrder !== undefined) destination.sortOrder = parseInt(sortOrder, 10) || 0;
-
-    await destination.save();
-
-    res.status(200).json({
-      success: true,
-      message: 'Destination updated successfully',
-      destination: destination.toJSON(),
-    });
-  } catch (err) {
-    next(err);
+    return ApiResponse.success(res, updated, 'Destination updated successfully.');
+  } catch (error) {
+    if (error.statusCode === 404) return ApiResponse.notFound(res, error.message);
+    if (error.statusCode === 409) return ApiResponse.conflict(res, error.message);
+    next(error);
   }
 };
 
-// @desc    Add a sub-location / area into a destination
-// @route   POST /api/destinations/:id/sub-locations
-// @access  Private (Admin)
+// @desc    Add sub-location hub to destination
+// @route   POST /api/destinations/:id/sublocations
+// @access  Admin Protected
 export const addSubLocation = async (req, res, next) => {
   try {
-    const destination = await Destination.findByPk(req.params.id);
-    if (!destination) {
-      return res.status(404).json({
-        success: false,
-        message: 'Destination not found',
-      });
+    const { id } = req.params;
+    const { name } = req.body;
+
+    // VALIDATION ONLY
+    if (!id || isNaN(Number(id))) {
+      return ApiResponse.badRequest(res, 'Valid numeric Destination ID is required.');
+    }
+    if (!name || typeof name !== 'string' || name.trim().length < 2) {
+      return ApiResponse.badRequest(res, 'Sub-location name must be at least 2 characters.');
     }
 
-    const { placeName } = req.body;
-    if (!placeName || !placeName.trim()) {
-      return res.status(400).json({
-        success: false,
-        message: 'Place/Area name is required',
-      });
-    }
+    const result = await destinationService.addSubLocation(Number(id), req.body);
 
-    const trimmed = placeName.trim();
-    const currentSubs = Array.isArray(destination.subLocations) ? destination.subLocations : [];
-    if (!currentSubs.includes(trimmed)) {
-      destination.subLocations = [...currentSubs, trimmed];
-      await destination.save();
-    }
-
-    res.status(200).json({
-      success: true,
-      message: `Added place "${trimmed}" to ${destination.name}`,
-      subLocations: destination.subLocations,
-    });
-  } catch (err) {
-    next(err);
+    return ApiResponse.created(
+      res,
+      result.subLocation,
+      `Sub-location '${result.subLocation.name}' added to ${result.dest.name}`
+    );
+  } catch (error) {
+    if (error.statusCode === 404) return ApiResponse.notFound(res, error.message);
+    if (error.statusCode === 409) return ApiResponse.conflict(res, error.message);
+    next(error);
   }
 };
 
-// @desc    Toggle destination active/inactive
-// @route   PATCH /api/destinations/:id/status
-// @access  Private (Admin)
+// @desc    Toggle destination active/inactive status
+// @route   PATCH /api/destinations/:id/toggle-status
+// @access  Admin Protected
 export const toggleDestinationStatus = async (req, res, next) => {
   try {
-    const destination = await Destination.findByPk(req.params.id);
-    if (!destination) {
-      return res.status(404).json({
-        success: false,
-        message: 'Destination not found',
-      });
+    const { id } = req.params;
+
+    // VALIDATION ONLY
+    if (!id || isNaN(Number(id))) {
+      return ApiResponse.badRequest(res, 'Valid numeric Destination ID is required.');
     }
 
-    destination.status = destination.status === 'active' ? 'inactive' : 'active';
-    await destination.save();
+    const updated = await destinationService.toggleStatus(Number(id));
 
-    res.status(200).json({
-      success: true,
-      message: `Destination status changed to ${destination.status}`,
-      destination: destination.toJSON(),
-    });
-  } catch (err) {
-    next(err);
+    return ApiResponse.success(res, updated, `Destination is now ${updated.status}.`);
+  } catch (error) {
+    if (error.statusCode === 404) return ApiResponse.notFound(res, error.message);
+    next(error);
   }
 };
 
-// @desc    Delete destination
+// @desc    Delete a destination (Supports Soft Delete & Hard Delete)
 // @route   DELETE /api/destinations/:id
-// @access  Private (Admin)
+// @query   hard=true (Optional: permanent deletion; default false sets isDelete: true)
+// @access  Admin Protected
 export const deleteDestination = async (req, res, next) => {
   try {
-    const destination = await Destination.findByPk(req.params.id);
-    if (!destination) {
-      return res.status(404).json({
-        success: false,
-        message: 'Destination not found',
-      });
+    const { id } = req.params;
+
+    // VALIDATION ONLY
+    if (!id || isNaN(Number(id))) {
+      return ApiResponse.badRequest(res, 'Valid numeric Destination ID is required.');
     }
 
-    await destination.destroy();
+    const isHard = req.query.hard === 'true' || req.body?.hard === true;
+    const result = await destinationService.delete(Number(id), { hard: isHard });
 
-    res.status(200).json({
-      success: true,
-      message: 'Destination deleted successfully',
-    });
-  } catch (err) {
-    next(err);
+    if (isHard) {
+      return ApiResponse.success(res, result, `Destination #${id} permanently deleted from database (Hard Delete)`);
+    }
+
+    return ApiResponse.success(res, result, `Destination #${id} moved to trash (Soft Delete: isDelete set to true)`);
+  } catch (error) {
+    if (error.statusCode === 404) return ApiResponse.notFound(res, error.message);
+    next(error);
   }
 };

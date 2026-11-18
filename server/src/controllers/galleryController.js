@@ -1,37 +1,28 @@
-import { Op } from 'sequelize';
-import Gallery from '../models/Gallery.js';
-import { processUploadedFile } from '../middleware/upload.js';
+import galleryService from '../service/galleryService.js';
+import { ApiResponse } from '../common/index.js';
+import { MediaType } from '../enums/index.js';
+
+/**
+ * Gallery Controller
+ * RESPONSIBILITY: Request validation, parameter parsing, calling GalleryService, and returning API responses.
+ * (Database operations are handled in GalleryRepository; Business logic & media processing are handled in GalleryService)
+ */
 
 // @desc    Get all gallery items (supports ?type=photo|video & ?tag=...)
 // @route   GET /api/gallery
 // @access  Public
 export const getGalleryItems = async (req, res, next) => {
   try {
-    const { type, tag, featured } = req.query;
-    const where = {};
+    const { type } = req.query;
 
-    if (type && ['photo', 'video'].includes(type)) {
-      where.type = type;
-    }
-    if (tag && tag !== 'all') {
-      where.tag = { [Op.like]: tag };
-    }
-    if (featured === 'true') {
-      where.featured = true;
+    if (type && !Object.values(MediaType).includes(type)) {
+      return ApiResponse.badRequest(res, `Invalid type filter. Allowed: ${Object.values(MediaType).join(', ')}`);
     }
 
-    const items = await Gallery.findAll({
-      where,
-      order: [
-        ['sortOrder', 'ASC'],
-        ['createdAt', 'DESC'],
-      ],
-    });
+    const items = await galleryService.getGalleryItems(req.query);
 
-    res.status(200).json({
-      success: true,
+    return ApiResponse.success(res, items, 'Gallery items retrieved successfully', {
       count: items.length,
-      items,
     });
   } catch (error) {
     next(error);
@@ -44,22 +35,16 @@ export const getGalleryItems = async (req, res, next) => {
 export const uploadGalleryMedia = async (req, res, next) => {
   try {
     if (!req.file) {
-      return res.status(400).json({ success: false, message: 'Please provide a file to upload' });
+      return ApiResponse.badRequest(res, 'Please provide a media file to upload.');
     }
 
-    const fileUrl = await processUploadedFile(req.file, req);
-    const isVideo =
-      req.file.mimetype.startsWith('video/') ||
-      /\.(mp4|webm|mov|mkv)$/i.test(req.file.originalname);
+    const result = await galleryService.uploadMedia(req.file, req);
 
-    res.status(200).json({
-      success: true,
-      fileUrl,
-      type: isVideo ? 'video' : 'photo',
-      originalName: req.file.originalname,
-      message: 'Media uploaded successfully',
-    });
+    return ApiResponse.created(res, result, 'Media uploaded successfully.');
   } catch (error) {
+    if (error.statusCode) {
+      return ApiResponse.send(res, error.statusCode, { success: false, message: error.message });
+    }
     next(error);
   }
 };
@@ -69,28 +54,29 @@ export const uploadGalleryMedia = async (req, res, next) => {
 // @access  Admin Protected
 export const createGalleryItem = async (req, res, next) => {
   try {
-    const { title, type, url, thumbnailUrl, tag, caption, featured, sortOrder } = req.body;
+    const { title, url, type } = req.body;
 
-    if (!title || !url) {
-      return res.status(400).json({ success: false, message: 'Title and Media URL are required' });
+    // 1. INPUT VALIDATION ONLY
+    const errors = [];
+    if (!title || typeof title !== 'string' || title.trim().length < 2) {
+      errors.push('Title is required and must be at least 2 characters.');
+    }
+    if (!url || typeof url !== 'string' || url.trim().length === 0) {
+      errors.push('Valid Media URL is required.');
+    }
+    if (type && !Object.values(MediaType).includes(type)) {
+      errors.push(`Invalid media type. Allowed: ${Object.values(MediaType).join(', ')}`);
     }
 
-    const item = await Gallery.create({
-      title,
-      type: type || 'photo',
-      url,
-      thumbnailUrl: thumbnailUrl || (type === 'photo' ? url : null),
-      tag: tag || 'Hill Station',
-      caption,
-      featured: Boolean(featured),
-      sortOrder: Number(sortOrder) || 0,
-    });
+    if (errors.length > 0) {
+      return ApiResponse.badRequest(res, 'Validation failed for gallery item creation.', errors);
+    }
 
-    res.status(201).json({
-      success: true,
-      message: 'Gallery item added successfully',
-      item,
-    });
+    // 2. CALL SERVICE LAYER
+    const item = await galleryService.createGalleryItem(req.body);
+
+    // 3. RETURN STANDARDIZED API RESPONSE (201 Created)
+    return ApiResponse.created(res, item, 'Gallery item added successfully.');
   } catch (error) {
     next(error);
   }
@@ -101,40 +87,45 @@ export const createGalleryItem = async (req, res, next) => {
 // @access  Admin Protected
 export const updateGalleryItem = async (req, res, next) => {
   try {
-    const item = await Gallery.findByPk(req.params.id);
-    if (!item) {
-      return res.status(404).json({ success: false, message: 'Gallery item not found' });
+    const { id } = req.params;
+
+    // VALIDATION ONLY
+    if (!id || isNaN(Number(id))) {
+      return ApiResponse.badRequest(res, 'Valid numeric Gallery ID is required.');
     }
 
-    await item.update(req.body);
+    const item = await galleryService.updateGalleryItem(Number(id), req.body);
 
-    res.status(200).json({
-      success: true,
-      message: 'Gallery item updated successfully',
-      item,
-    });
+    return ApiResponse.success(res, item, 'Gallery item updated successfully.');
   } catch (error) {
+    if (error.statusCode === 404) return ApiResponse.notFound(res, error.message);
     next(error);
   }
 };
 
-// @desc    Delete a gallery item
+// @desc    Delete a gallery item (Supports Soft Delete & Hard Delete)
 // @route   DELETE /api/gallery/:id
+// @query   hard=true (Optional: permanent deletion; default false sets isDelete: true)
 // @access  Admin Protected
 export const deleteGalleryItem = async (req, res, next) => {
   try {
-    const item = await Gallery.findByPk(req.params.id);
-    if (!item) {
-      return res.status(404).json({ success: false, message: 'Gallery item not found' });
+    const { id } = req.params;
+
+    // VALIDATION ONLY
+    if (!id || isNaN(Number(id))) {
+      return ApiResponse.badRequest(res, 'Valid numeric Gallery ID is required.');
     }
 
-    await item.destroy();
+    const isHard = req.query.hard === 'true' || req.body?.hard === true;
+    const result = await galleryService.delete(Number(id), { hard: isHard });
 
-    res.status(200).json({
-      success: true,
-      message: 'Gallery item deleted successfully',
-    });
+    if (isHard) {
+      return ApiResponse.success(res, result, `Gallery item #${id} permanently deleted from database (Hard Delete)`);
+    }
+
+    return ApiResponse.success(res, result, `Gallery item #${id} moved to trash (Soft Delete: isDelete set to true)`);
   } catch (error) {
+    if (error.statusCode === 404) return ApiResponse.notFound(res, error.message);
     next(error);
   }
 };

@@ -64,6 +64,9 @@ export const connectDB = async () => {
       try {
         await sequelize.sync({ alter: false });
         console.log('[DB] ✅ All Sequelize models synchronized with MySQL tables.');
+
+        // 4. Ensure soft delete (isDelete, deletedAt) columns exist on all tables
+        await ensureSoftDeleteColumns(sequelize);
       } catch (syncErr) {
         console.warn('[DB] Sync notice:', syncErr.message);
       }
@@ -92,6 +95,40 @@ export const disconnectDB = async () => {
     console.log('[DB] Disconnected from MySQL database');
   } catch (err) {
     console.error('[DB] Error during disconnect:', err.message);
+  }
+};
+
+/**
+ * Ensures soft-delete columns (isDelete, deletedAt) exist in all database tables safely
+ */
+export const ensureSoftDeleteColumns = async (sequelizeInstance) => {
+  try {
+    const [tables] = await sequelizeInstance.query('SHOW TABLES;');
+    if (!tables || !tables.length) return;
+    const tableKey = Object.keys(tables[0])[0];
+
+    for (const row of tables) {
+      const tableName = row[tableKey];
+      if (!tableName || tableName.startsWith('Sequelize')) continue;
+
+      try {
+        const [isDelCol] = await sequelizeInstance.query(`SHOW COLUMNS FROM \`${tableName}\` LIKE 'isDelete';`);
+        if (isDelCol.length === 0) {
+          await sequelizeInstance.query(`ALTER TABLE \`${tableName}\` ADD COLUMN \`isDelete\` TINYINT(1) NOT NULL DEFAULT 0;`);
+          console.log(`[DB] Added 'isDelete' column to table: ${tableName}`);
+        }
+      } catch (colErr) {}
+
+      try {
+        const [delAtCol] = await sequelizeInstance.query(`SHOW COLUMNS FROM \`${tableName}\` LIKE 'deletedAt';`);
+        if (delAtCol.length === 0) {
+          await sequelizeInstance.query(`ALTER TABLE \`${tableName}\` ADD COLUMN \`deletedAt\` DATETIME NULL DEFAULT NULL;`);
+          console.log(`[DB] Added 'deletedAt' column to table: ${tableName}`);
+        }
+      } catch (delAtErr) {}
+    }
+  } catch (err) {
+    console.warn('[DB] Soft-delete column auto-check notice:', err.message);
   }
 };
 

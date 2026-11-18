@@ -103,6 +103,14 @@ const TripSettlement = sequelize.define(
       type: DataTypes.TEXT,
       allowNull: true,
     },
+    isDelete: {
+      type: DataTypes.BOOLEAN,
+      defaultValue: false,
+    },
+    deletedAt: {
+      type: DataTypes.DATE,
+      allowNull: true,
+    },
   },
   {
     timestamps: true,

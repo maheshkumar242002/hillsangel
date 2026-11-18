@@ -76,6 +76,16 @@ Asset.init(
       type: DataTypes.JSON,
       defaultValue: null,
     },
+    isDelete: {
+      type: DataTypes.BOOLEAN,
+      defaultValue: false,
+      allowNull: false,
+    },
+    deletedAt: {
+      type: DataTypes.DATE,
+      allowNull: true,
+      defaultValue: null,
+    },
     _id: {
       type: DataTypes.VIRTUAL,
       get() {

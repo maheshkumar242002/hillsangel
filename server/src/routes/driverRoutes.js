@@ -5,6 +5,7 @@ import {
   createDriver,
   updateDriver,
   deleteDriver,
+  restoreDriver,
   uploadDriverPhoto,
 } from '../controllers/driverController.js';
 import { protectAdmin, optionalAdmin } from '../middleware/auth.js';
@@ -16,10 +17,11 @@ const router = express.Router();
 router.get('/', optionalAdmin, getDrivers);
 router.get('/:id', optionalAdmin, getDriverById);
 
-// Admin-protected CRUD & photo upload
+// Admin-protected CRUD, restore, and photo upload
 router.post('/upload', protectAdmin, upload.single('photo'), uploadDriverPhoto);
 router.post('/', protectAdmin, createDriver);
 router.put('/:id', protectAdmin, updateDriver);
 router.delete('/:id', protectAdmin, deleteDriver);
+router.patch('/:id/restore', protectAdmin, restoreDriver);
 
 export default router;

@@ -147,6 +147,16 @@ PartnerTieup.init(
       type: DataTypes.TEXT,
       allowNull: true,
     },
+    isDelete: {
+      type: DataTypes.BOOLEAN,
+      defaultValue: false,
+      allowNull: false,
+    },
+    deletedAt: {
+      type: DataTypes.DATE,
+      allowNull: true,
+      defaultValue: null,
+    },
     _id: {
       type: DataTypes.VIRTUAL,
       get() {

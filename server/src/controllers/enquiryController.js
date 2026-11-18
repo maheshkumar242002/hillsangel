@@ -1,34 +1,45 @@
-import Enquiry from '../models/Enquiry.js';
-import { generateWhatsAppLink } from '../utils/whatsapp.js';
+import enquiryService from '../service/enquiryService.js';
+import { ApiResponse } from '../common/index.js';
+import { EnquiryStatus } from '../enums/index.js';
+
+/**
+ * Enquiry Controller
+ * RESPONSIBILITY: Request validation, parameter parsing, calling EnquiryService, and returning API responses.
+ * (Database operations are handled in EnquiryRepository; Business logic & links are handled in EnquiryService)
+ */
 
 // @desc    Submit public contact enquiry
 // @route   POST /api/enquiries
 // @access  Public (Rate limited)
 export const createEnquiry = async (req, res, next) => {
   try {
-    const { name, phone, email, subject, message } = req.body;
+    const { name, phone, message } = req.body;
 
-    if (!name || !phone || !message) {
-      return res.status(400).json({
-        success: false,
-        message: 'Name, phone number, and message are required.',
-      });
+    // 1. INPUT VALIDATION ONLY
+    const errors = [];
+    if (!name || typeof name !== 'string' || name.trim().length < 2) {
+      errors.push('Name must be at least 2 characters.');
+    }
+    if (!phone || typeof phone !== 'string' || phone.trim().length < 7) {
+      errors.push('Valid phone number is required.');
+    }
+    if (!message || typeof message !== 'string' || message.trim().length < 5) {
+      errors.push('Message must be at least 5 characters.');
     }
 
-    const enquiry = await Enquiry.create({
-      name: name.trim(),
-      phone: phone.trim(),
-      email: email ? email.trim() : null,
-      subject: subject ? subject.trim() : 'Tour Enquiry',
-      message: message.trim(),
-    });
+    if (errors.length > 0) {
+      return ApiResponse.badRequest(res, 'Validation failed for enquiry submission.', errors);
+    }
 
-    res.status(201).json({
-      success: true,
-      message: 'Thank you for reaching out! Our travel specialist will contact you shortly.',
-      enquiryId: enquiry.id,
-      _id: String(enquiry.id),
-    });
+    // 2. CALL SERVICE LAYER
+    const enquiry = await enquiryService.createEnquiry(req.body);
+
+    // 3. RETURN STANDARDIZED API RESPONSE (201 Created)
+    return ApiResponse.created(
+      res,
+      { enquiryId: enquiry.id, _id: String(enquiry.id) },
+      'Thank you for reaching out! Our travel specialist will contact you shortly.'
+    );
   } catch (err) {
     next(err);
   }
@@ -39,31 +50,19 @@ export const createEnquiry = async (req, res, next) => {
 // @access  Private (Admin)
 export const getEnquiries = async (req, res, next) => {
   try {
-    const { status, page = 1, limit = 20 } = req.query;
+    const { status } = req.query;
 
-    const where = {};
-    if (status && status !== 'all') {
-      where.status = status;
+    if (status && status !== 'all' && !Object.values(EnquiryStatus).includes(status)) {
+      return ApiResponse.badRequest(res, `Invalid status filter. Allowed: ${Object.values(EnquiryStatus).join(', ')}`);
     }
 
-    const pageNum = Math.max(1, parseInt(page, 10));
-    const limitNum = Math.max(1, parseInt(limit, 10));
-    const skip = (pageNum - 1) * limitNum;
+    const result = await enquiryService.getEnquiries(req.query);
 
-    const { rows: enquiries, count: total } = await Enquiry.findAndCountAll({
-      where,
-      order: [['createdAt', 'DESC']],
-      offset: skip,
-      limit: limitNum,
-    });
-
-    res.status(200).json({
-      success: true,
-      count: enquiries.length,
-      total,
-      totalPages: Math.ceil(total / limitNum),
-      currentPage: pageNum,
-      enquiries,
+    return ApiResponse.success(res, result.enquiries, 'Enquiries retrieved successfully', {
+      count: result.count,
+      total: result.total,
+      totalPages: result.totalPages,
+      currentPage: result.currentPage,
     });
   } catch (err) {
     next(err);
@@ -75,50 +74,54 @@ export const getEnquiries = async (req, res, next) => {
 // @access  Private (Admin)
 export const updateEnquiryStatus = async (req, res, next) => {
   try {
+    const { id } = req.params;
     const { status } = req.body;
-    const enquiry = await Enquiry.findByPk(req.params.id);
-    if (!enquiry) {
-      return res.status(404).json({
-        success: false,
-        message: 'Enquiry not found.',
-      });
+
+    // 1. VALIDATION ONLY
+    if (!id || isNaN(Number(id))) {
+      return ApiResponse.badRequest(res, 'Valid numeric Enquiry ID is required.');
+    }
+    if (!status || !Object.values(EnquiryStatus).includes(status)) {
+      return ApiResponse.badRequest(
+        res,
+        `Valid status is required. Allowed: ${Object.values(EnquiryStatus).join(', ')}`
+      );
     }
 
-    if (status) {
-      enquiry.status = status;
-      await enquiry.save();
-    }
+    // 2. CALL SERVICE LAYER
+    const enquiry = await enquiryService.updateStatus(Number(id), status);
 
-    res.status(200).json({
-      success: true,
-      message: `Enquiry status updated to ${enquiry.status}.`,
-      enquiry,
-    });
+    // 3. RETURN RESPONSE
+    return ApiResponse.success(res, enquiry, `Enquiry status updated to ${enquiry.status}.`);
   } catch (err) {
+    if (err.statusCode === 404) return ApiResponse.notFound(res, err.message);
     next(err);
   }
 };
 
-// @desc    Delete enquiry
+// @desc    Delete enquiry (Supports Soft Delete & Hard Delete)
 // @route   DELETE /api/enquiries/:id
+// @query   hard=true (Optional: permanent deletion; default false sets isDelete: true)
 // @access  Private (Admin)
 export const deleteEnquiry = async (req, res, next) => {
   try {
-    const enquiry = await Enquiry.findByPk(req.params.id);
-    if (!enquiry) {
-      return res.status(404).json({
-        success: false,
-        message: 'Enquiry not found.',
-      });
+    const { id } = req.params;
+
+    // VALIDATION ONLY
+    if (!id || isNaN(Number(id))) {
+      return ApiResponse.badRequest(res, 'Valid numeric Enquiry ID is required.');
     }
 
-    await enquiry.destroy();
+    const isHard = req.query.hard === 'true' || req.body?.hard === true;
+    const result = await enquiryService.delete(Number(id), { hard: isHard });
 
-    res.status(200).json({
-      success: true,
-      message: 'Enquiry deleted successfully.',
-    });
+    if (isHard) {
+      return ApiResponse.success(res, result, `Enquiry #${id} permanently deleted from database (Hard Delete)`);
+    }
+
+    return ApiResponse.success(res, result, `Enquiry #${id} moved to trash (Soft Delete: isDelete set to true)`);
   } catch (err) {
+    if (err.statusCode === 404) return ApiResponse.notFound(res, err.message);
     next(err);
   }
 };
@@ -128,22 +131,18 @@ export const deleteEnquiry = async (req, res, next) => {
 // @access  Private (Admin)
 export const getEnquiryWhatsAppLink = async (req, res, next) => {
   try {
-    const enquiry = await Enquiry.findByPk(req.params.id);
-    if (!enquiry) {
-      return res.status(404).json({
-        success: false,
-        message: 'Enquiry not found.',
-      });
+    const { id } = req.params;
+
+    // VALIDATION ONLY
+    if (!id || isNaN(Number(id))) {
+      return ApiResponse.badRequest(res, 'Valid numeric Enquiry ID is required.');
     }
 
-    const replyText = `Hello ${enquiry.name}! This is Hills Angel Tours and Travels responding to your enquiry: "${enquiry.message}". How can we help you plan your hill-station holiday?`;
-    const link = generateWhatsAppLink(enquiry.phone, replyText);
+    const result = await enquiryService.getWhatsAppLink(Number(id));
 
-    res.status(200).json({
-      success: true,
-      whatsappUrl: link,
-    });
+    return ApiResponse.success(res, result, 'WhatsApp link generated successfully.');
   } catch (err) {
+    if (err.statusCode === 404) return ApiResponse.notFound(res, err.message);
     next(err);
   }
 };

@@ -1,19 +1,24 @@
-import { Op } from 'sequelize';
-import Tier from '../models/Tier.js';
+import tierService from '../service/tierService.js';
+import { ApiResponse } from '../common/index.js';
+
+/**
+ * Tier Controller
+ * RESPONSIBILITY: Request validation, parameter parsing, calling TierService, and returning API responses.
+ * (Database operations are handled in TierRepository; Business logic is handled in TierService)
+ */
 
 // @desc    Get all tiers (Public)
 // @route   GET /api/tiers
 // @access  Public
 export const getTiers = async (req, res, next) => {
   try {
-    const tiers = await Tier.findAll({
+    const tiers = await tierService.getAll({
       where: { isActive: true },
       order: [['starRating', 'ASC']],
     });
-    res.status(200).json({
-      success: true,
+
+    return ApiResponse.success(res, tiers, 'Tiers retrieved successfully', {
       count: tiers.length,
-      tiers,
     });
   } catch (error) {
     next(error);
@@ -25,25 +30,18 @@ export const getTiers = async (req, res, next) => {
 // @access  Public
 export const getTierByKey = async (req, res, next) => {
   try {
-    const keyVal = (req.params.key || '').toLowerCase();
-    const tier = await Tier.findOne({
-      where: {
-        [Op.or]: [{ key: keyVal }, { slug: keyVal }],
-      },
-    });
+    const keyVal = (req.params.key || '').toLowerCase().trim();
 
-    if (!tier) {
-      return res.status(404).json({
-        success: false,
-        message: 'Tier not found.',
-      });
+    // VALIDATION ONLY
+    if (!keyVal) {
+      return ApiResponse.badRequest(res, 'Valid tier key is required.');
     }
 
-    res.status(200).json({
-      success: true,
-      tier,
-    });
+    const tier = await tierService.getByKey(keyVal);
+
+    return ApiResponse.success(res, tier, 'Tier details retrieved successfully');
   } catch (error) {
+    if (error.statusCode === 404) return ApiResponse.notFound(res, error.message);
     next(error);
   }
 };

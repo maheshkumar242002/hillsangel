@@ -1,19 +1,24 @@
-import { Op } from 'sequelize';
-import Category from '../models/Category.js';
+import categoryService from '../service/categoryService.js';
+import { ApiResponse } from '../common/index.js';
+
+/**
+ * Category Controller
+ * RESPONSIBILITY: Request validation, parameter parsing, calling CategoryService, and returning API responses.
+ * (Database operations are handled in CategoryRepository; Business logic is handled in CategoryService)
+ */
 
 // @desc    Get all categories (Public)
 // @route   GET /api/categories
 // @access  Public
 export const getCategories = async (req, res, next) => {
   try {
-    const categories = await Category.findAll({
+    const categories = await categoryService.getAll({
       where: { isActive: true },
       order: [['key', 'ASC']],
     });
-    res.status(200).json({
-      success: true,
+
+    return ApiResponse.success(res, categories, 'Categories retrieved successfully', {
       count: categories.length,
-      categories,
     });
   } catch (error) {
     next(error);
@@ -25,25 +30,18 @@ export const getCategories = async (req, res, next) => {
 // @access  Public
 export const getCategoryByKey = async (req, res, next) => {
   try {
-    const keyVal = (req.params.key || '').toLowerCase();
-    const category = await Category.findOne({
-      where: {
-        [Op.or]: [{ key: keyVal }, { slug: keyVal }],
-      },
-    });
+    const keyVal = (req.params.key || '').toLowerCase().trim();
 
-    if (!category) {
-      return res.status(404).json({
-        success: false,
-        message: 'Category not found.',
-      });
+    // VALIDATION ONLY
+    if (!keyVal) {
+      return ApiResponse.badRequest(res, 'Valid category key is required.');
     }
 
-    res.status(200).json({
-      success: true,
-      category,
-    });
+    const category = await categoryService.getByKey(keyVal);
+
+    return ApiResponse.success(res, category, 'Category details retrieved successfully');
   } catch (error) {
+    if (error.statusCode === 404) return ApiResponse.notFound(res, error.message);
     next(error);
   }
 };

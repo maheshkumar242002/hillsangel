@@ -17,8 +17,13 @@ import vehicleRoutes from './vehicleRoutes.js';
 import driverRoutes from './driverRoutes.js';
 import destinationRoutes from './destinationRoutes.js';
 import expenseRoutes from './expenseRoutes.js';
+import uploadRoutes from '../common/routes/uploadRoutes.js';
 
 const router = express.Router();
+
+// Common upload endpoints (available at /api/upload and /api/common/upload)
+router.use('/upload', uploadRoutes);
+router.use('/common/upload', uploadRoutes);
 
 // Mount all API resource sub-routers
 router.use('/auth', authRoutes);

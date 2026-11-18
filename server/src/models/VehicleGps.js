@@ -111,6 +111,14 @@ VehicleGps.init(
       type: DataTypes.DATE,
       defaultValue: DataTypes.NOW,
     },
+    isDelete: {
+      type: DataTypes.BOOLEAN,
+      defaultValue: false,
+    },
+    deletedAt: {
+      type: DataTypes.DATE,
+      allowNull: true,
+    },
     _id: {
       type: DataTypes.VIRTUAL,
       get() {

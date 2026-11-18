@@ -52,6 +52,16 @@ Customer.init(
       type: DataTypes.ENUM('active', 'inactive', 'vip'),
       defaultValue: 'active',
     },
+    isDelete: {
+      type: DataTypes.BOOLEAN,
+      defaultValue: false,
+      allowNull: false,
+    },
+    deletedAt: {
+      type: DataTypes.DATE,
+      allowNull: true,
+      defaultValue: null,
+    },
     _id: {
       type: DataTypes.VIRTUAL,
       get() {

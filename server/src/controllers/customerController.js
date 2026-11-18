@@ -1,48 +1,25 @@
-import { Op } from 'sequelize';
-import Customer from '../models/Customer.js';
-import Booking from '../models/Booking.js';
+import customerService from '../service/customerService.js';
+import { ApiResponse } from '../common/index.js';
+import { CustomerStatus } from '../enums/index.js';
+
+/**
+ * Customer Controller
+ * RESPONSIBILITY: Request validation, parameter parsing, calling CustomerService, and returning API responses.
+ * (Database operations are handled in CustomerRepository; Business logic & history joins are handled in CustomerService)
+ */
 
 // @desc    Get all customers with pagination & search (Admin)
 // @route   GET /api/customers
 // @access  Private (Admin)
 export const getCustomers = async (req, res, next) => {
   try {
-    const { search, page = 1, limit = 20, sort = 'newest' } = req.query;
+    const result = await customerService.getCustomers(req.query);
 
-    const where = {};
-    if (search && search.trim() !== '') {
-      const term = `%${search.trim()}%`;
-      where[Op.or] = [
-        { name: { [Op.like]: term } },
-        { phone: { [Op.like]: term } },
-        { email: { [Op.like]: term } },
-        { city: { [Op.like]: term } },
-      ];
-    }
-
-    const pageNum = parseInt(page, 10) || 1;
-    const limitNum = parseInt(limit, 10) || 20;
-    const skip = (pageNum - 1) * limitNum;
-
-    let order = [['createdAt', 'DESC']];
-    if (sort === 'oldest') order = [['createdAt', 'ASC']];
-    else if (sort === 'bookings') order = [['totalBookings', 'DESC']];
-    else if (sort === 'spent') order = [['totalSpent', 'DESC']];
-
-    const { rows: customers, count: total } = await Customer.findAndCountAll({
-      where,
-      order,
-      offset: skip,
-      limit: limitNum,
-    });
-
-    res.status(200).json({
-      success: true,
-      count: customers.length,
-      total,
-      totalPages: Math.ceil(total / limitNum),
-      currentPage: pageNum,
-      customers,
+    return ApiResponse.success(res, result.customers, 'Customers retrieved successfully', {
+      count: result.customers.length,
+      total: result.total,
+      totalPages: result.totalPages,
+      currentPage: result.currentPage,
     });
   } catch (error) {
     next(error);
@@ -54,41 +31,31 @@ export const getCustomers = async (req, res, next) => {
 // @access  Private (Admin)
 export const createCustomer = async (req, res, next) => {
   try {
-    const { name, phone, email, city, address, notes, status, totalBookings, totalSpent } = req.body;
+    const { name, phone, status } = req.body;
 
-    if (!name || !phone) {
-      return res.status(400).json({
-        success: false,
-        message: 'Customer name and phone number are required.',
-      });
+    // 1. INPUT VALIDATION ONLY
+    const errors = [];
+    if (!name || typeof name !== 'string' || name.trim().length < 2) {
+      errors.push('Customer Name must be at least 2 characters.');
+    }
+    if (!phone || typeof phone !== 'string' || phone.trim().length < 7) {
+      errors.push('Valid phone number is required.');
+    }
+    if (status && !Object.values(CustomerStatus).includes(status)) {
+      errors.push(`Invalid customer status. Allowed: ${Object.values(CustomerStatus).join(', ')}`);
     }
 
-    const existing = await Customer.findOne({ where: { phone: phone.trim() } });
-    if (existing) {
-      return res.status(400).json({
-        success: false,
-        message: `Customer with phone number '${phone.trim()}' already exists.`,
-      });
+    if (errors.length > 0) {
+      return ApiResponse.badRequest(res, 'Validation failed for customer creation.', errors);
     }
 
-    const customer = await Customer.create({
-      name: name.trim(),
-      phone: phone.trim(),
-      email: email ? email.trim() : null,
-      city: city ? city.trim() : null,
-      address: address ? address.trim() : null,
-      notes: notes ? notes.trim() : null,
-      status: status || 'active',
-      totalBookings: Number(totalBookings) || 0,
-      totalSpent: Number(totalSpent) || 0,
-    });
+    // 2. CALL SERVICE LAYER
+    const customer = await customerService.createCustomer(req.body);
 
-    res.status(201).json({
-      success: true,
-      message: 'Customer inserted successfully.',
-      customer,
-    });
+    // 3. RETURN STANDARDIZED API RESPONSE (201 Created)
+    return ApiResponse.created(res, customer, 'Customer inserted successfully.');
   } catch (error) {
+    if (error.statusCode === 409) return ApiResponse.conflict(res, error.message);
     next(error);
   }
 };
@@ -98,27 +65,18 @@ export const createCustomer = async (req, res, next) => {
 // @access  Private (Admin)
 export const getCustomerById = async (req, res, next) => {
   try {
-    const customer = await Customer.findByPk(req.params.id);
-    if (!customer) {
-      return res.status(404).json({
-        success: false,
-        message: 'Customer not found.',
-      });
+    const { id } = req.params;
+
+    // VALIDATION ONLY
+    if (!id || isNaN(Number(id))) {
+      return ApiResponse.badRequest(res, 'Valid numeric Customer ID is required.');
     }
 
-    const bookings = await Booking.findAll({
-      where: {
-        [Op.or]: [{ customerId: customer.id }, { phone: customer.phone }],
-      },
-      order: [['createdAt', 'DESC']],
-    });
+    const result = await customerService.getCustomerWithBookings(Number(id));
 
-    res.status(200).json({
-      success: true,
-      customer,
-      bookings,
-    });
+    return ApiResponse.success(res, result, 'Customer details retrieved successfully');
   } catch (error) {
+    if (error.statusCode === 404) return ApiResponse.notFound(res, error.message);
     next(error);
   }
 };
@@ -128,48 +86,49 @@ export const getCustomerById = async (req, res, next) => {
 // @access  Private (Admin)
 export const updateCustomer = async (req, res, next) => {
   try {
-    const { name, email, city, address, notes, status } = req.body;
+    const { id } = req.params;
+    const { status } = req.body;
 
-    const customer = await Customer.findByPk(req.params.id);
-    if (!customer) {
-      return res.status(404).json({
-        success: false,
-        message: 'Customer not found.',
-      });
+    // VALIDATION ONLY
+    if (!id || isNaN(Number(id))) {
+      return ApiResponse.badRequest(res, 'Valid numeric Customer ID is required.');
+    }
+    if (status && !Object.values(CustomerStatus).includes(status)) {
+      return ApiResponse.badRequest(res, `Invalid status. Allowed: ${Object.values(CustomerStatus).join(', ')}`);
     }
 
-    await customer.update({ name, email, city, address, notes, status });
+    const updatedCustomer = await customerService.updateCustomer(Number(id), req.body);
 
-    res.status(200).json({
-      success: true,
-      message: 'Customer profile updated.',
-      customer,
-    });
+    return ApiResponse.success(res, updatedCustomer, 'Customer profile updated successfully.');
   } catch (error) {
+    if (error.statusCode === 404) return ApiResponse.notFound(res, error.message);
     next(error);
   }
 };
 
-// @desc    Delete customer record (Admin)
+// @desc    Delete a customer (Supports Soft Delete & Hard Delete)
 // @route   DELETE /api/customers/:id
+// @query   hard=true (Optional: permanent deletion; default false sets isDelete: true)
 // @access  Private (Admin)
 export const deleteCustomer = async (req, res, next) => {
   try {
-    const customer = await Customer.findByPk(req.params.id);
-    if (!customer) {
-      return res.status(404).json({
-        success: false,
-        message: 'Customer not found.',
-      });
+    const { id } = req.params;
+
+    // VALIDATION ONLY
+    if (!id || isNaN(Number(id))) {
+      return ApiResponse.badRequest(res, 'Valid numeric Customer ID is required.');
     }
 
-    await customer.destroy();
+    const isHard = req.query.hard === 'true' || req.body?.hard === true;
+    const result = await customerService.delete(Number(id), { hard: isHard });
 
-    res.status(200).json({
-      success: true,
-      message: 'Customer deleted successfully.',
-    });
+    if (isHard) {
+      return ApiResponse.success(res, result, `Customer #${id} permanently deleted from database (Hard Delete)`);
+    }
+
+    return ApiResponse.success(res, result, `Customer #${id} moved to trash (Soft Delete: isDelete set to true)`);
   } catch (error) {
+    if (error.statusCode === 404) return ApiResponse.notFound(res, error.message);
     next(error);
   }
 };

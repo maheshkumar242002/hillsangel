@@ -1,35 +1,11 @@
-import jwt from 'jsonwebtoken';
-import Admin from '../models/Admin.js';
+import authService from '../service/authService.js';
+import { ApiResponse } from '../common/index.js';
 
-const generateToken = (id) => {
-  return jwt.sign({ id }, process.env.JWT_SECRET || 'hills_angels_super_secret_jwt_key_2026_elaichi', {
-    expiresIn: '7d',
-  });
-};
-
-const sendTokenResponse = (admin, statusCode, res) => {
-  const token = generateToken(admin.id);
-
-  const cookieOptions = {
-    expires: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 days
-    httpOnly: true,
-    secure: process.env.NODE_ENV === 'production',
-    sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
-  };
-
-  res.status(statusCode).cookie('adminToken', token, cookieOptions).json({
-    success: true,
-    token,
-    admin: {
-      id: admin.id,
-      _id: String(admin.id),
-      name: admin.name,
-      email: admin.email,
-      role: admin.role,
-      lastLogin: admin.lastLogin,
-    },
-  });
-};
+/**
+ * Auth Controller
+ * RESPONSIBILITY: Request validation, parameter parsing, calling AuthService, and returning API responses.
+ * (Database operations are handled in AdminRepository; Business logic & JWT signing are handled in AuthService)
+ */
 
 // @desc    Admin login
 // @route   POST /api/auth/login
@@ -38,36 +14,37 @@ export const login = async (req, res, next) => {
   try {
     const { email, password } = req.body;
 
-    if (!email || !password) {
-      return res.status(400).json({
-        success: false,
-        message: 'Please provide both email and password.',
-      });
+    // 1. INPUT VALIDATION ONLY
+    const errors = [];
+    if (!email || typeof email !== 'string' || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) {
+      errors.push('Valid email address is required.');
+    }
+    if (!password || typeof password !== 'string' || password.length < 4) {
+      errors.push('Password is required (at least 4 characters).');
     }
 
-    const admin = await Admin.findOne({
-      where: { email: email.toLowerCase().trim() },
-    });
-    if (!admin) {
-      return res.status(401).json({
-        success: false,
-        message: 'Invalid email or password.',
-      });
+    if (errors.length > 0) {
+      return ApiResponse.badRequest(res, 'Validation failed for login.', errors);
     }
 
-    const isMatch = await admin.comparePassword(password);
-    if (!isMatch) {
-      return res.status(401).json({
-        success: false,
-        message: 'Invalid email or password.',
-      });
-    }
+    // 2. CALL SERVICE LAYER
+    const { token, admin } = await authService.login({ email, password });
 
-    admin.lastLogin = new Date();
-    await admin.save();
+    // Set secure HTTP-only cookie
+    const cookieOptions = {
+      expires: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 days
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
+    };
+    res.cookie('adminToken', token, cookieOptions);
 
-    sendTokenResponse(admin, 200, res);
+    // 3. RETURN STANDARDIZED API RESPONSE (200 OK)
+    return ApiResponse.success(res, { token, admin }, 'Logged in successfully.');
   } catch (err) {
+    if (err.statusCode === 401) {
+      return ApiResponse.unauthorized(res, err.message);
+    }
     next(err);
   }
 };
@@ -84,10 +61,7 @@ export const logout = async (req, res, next) => {
       sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
     });
 
-    res.status(200).json({
-      success: true,
-      message: 'Logged out successfully.',
-    });
+    return ApiResponse.success(res, null, 'Logged out successfully.');
   } catch (err) {
     next(err);
   }
@@ -98,14 +72,15 @@ export const logout = async (req, res, next) => {
 // @access  Private (Admin)
 export const getMe = async (req, res, next) => {
   try {
-    const admin = await Admin.findByPk(req.admin.id, {
-      attributes: { exclude: ['password'] },
-    });
-    res.status(200).json({
-      success: true,
-      admin,
-    });
+    if (!req.admin?.id) {
+      return ApiResponse.unauthorized(res, 'Not authorized.');
+    }
+
+    const admin = await authService.getMe(req.admin.id);
+
+    return ApiResponse.success(res, admin, 'Admin profile retrieved successfully.');
   } catch (err) {
+    if (err.statusCode === 404) return ApiResponse.notFound(res, err.message);
     next(err);
   }
 };

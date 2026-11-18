@@ -1,47 +1,31 @@
-import { Op } from 'sequelize';
-import Asset from '../models/Asset.js';
-import sequelize from '../config/db.js';
-import { processUploadedFile } from '../middleware/upload.js';
+import assetService from '../service/assetService.js';
+import { ApiResponse } from '../common/index.js';
+import { AssetCategory, AssetStatus } from '../enums/index.js';
+
+/**
+ * Asset Controller
+ * RESPONSIBILITY: Request validation, parameter parsing, calling AssetService, and returning API responses.
+ * (Database operations are handled in AssetRepository; Business logic & KPI math are handled in AssetService)
+ */
 
 // @desc    Get all assets with filters & search
 // @route   GET /api/assets
 // @access  Public / Admin
 export const getAssets = async (req, res, next) => {
   try {
-    const { category, status, search, sort = 'name' } = req.query;
-    const where = {};
+    const { category, status } = req.query;
 
-    if (category && category !== 'all') {
-      where.category = category;
+    if (category && category !== 'all' && !Object.values(AssetCategory).includes(category)) {
+      return ApiResponse.badRequest(res, `Invalid category filter. Allowed: ${Object.values(AssetCategory).join(', ')}`);
     }
-    if (status && status !== 'all') {
-      where.status = status;
-    }
-    if (search && search.trim() !== '') {
-      const term = `%${search.trim()}%`;
-      where[Op.or] = [
-        { name: { [Op.like]: term } },
-        { assetCode: { [Op.like]: term } },
-        { description: { [Op.like]: term } },
-      ];
+    if (status && status !== 'all' && !Object.values(AssetStatus).includes(status)) {
+      return ApiResponse.badRequest(res, `Invalid status filter. Allowed: ${Object.values(AssetStatus).join(', ')}`);
     }
 
-    let order = [['createdAt', 'DESC']];
-    if (sort === 'buyPrice_asc') order = [['buyPrice', 'ASC']];
-    else if (sort === 'buyPrice_desc') order = [['buyPrice', 'DESC']];
-    else if (sort === 'rentPrice_asc') order = [['rentPrice', 'ASC']];
-    else if (sort === 'rentPrice_desc') order = [['rentPrice', 'DESC']];
-    else if (sort === 'name') order = [['name', 'ASC']];
+    const assets = await assetService.getAssets(req.query);
 
-    const assets = await Asset.findAll({
-      where,
-      order,
-    });
-
-    res.status(200).json({
-      success: true,
+    return ApiResponse.success(res, assets, 'Assets retrieved successfully', {
       count: assets.length,
-      assets,
     });
   } catch (error) {
     next(error);
@@ -53,52 +37,9 @@ export const getAssets = async (req, res, next) => {
 // @access  Admin Protected
 export const getAssetStats = async (req, res, next) => {
   try {
-    const totalAssets = await Asset.count();
-    const availableAssets = await Asset.count({ where: { status: 'available' } });
-    const inUseAssets = await Asset.count({ where: { status: 'in_use' } });
-    const maintenanceAssets = await Asset.count({ where: { status: 'maintenance' } });
+    const stats = await assetService.getStats();
 
-    // Financial totals in MySQL
-    const [financialRows] = await sequelize.query(`
-      SELECT 
-        COALESCE(SUM(buyPrice * quantity), 0) AS totalBuyInvestment,
-        COALESCE(SUM(rentPrice * quantity), 0) AS totalRentYieldPotential
-      FROM assets
-    `);
-
-    const totals = financialRows?.[0] || {
-      totalBuyInvestment: 0,
-      totalRentYieldPotential: 0,
-    };
-
-    // Category breakdown in MySQL
-    const [categoryRows] = await sequelize.query(`
-      SELECT 
-        category AS _id,
-        COUNT(*) AS count,
-        COALESCE(SUM(quantity), 0) AS totalUnits,
-        COALESCE(SUM(buyPrice * quantity), 0) AS totalBuyValue
-      FROM assets
-      GROUP BY category
-    `);
-
-    res.status(200).json({
-      success: true,
-      stats: {
-        totalAssets,
-        availableAssets,
-        inUseAssets,
-        maintenanceAssets,
-        totalBuyInvestment: Number(totals.totalBuyInvestment || 0),
-        totalRentYieldPotential: Number(totals.totalRentYieldPotential || 0),
-        categoryStats: categoryRows.map((r) => ({
-          _id: r._id,
-          count: Number(r.count),
-          totalUnits: Number(r.totalUnits),
-          totalBuyValue: Number(r.totalBuyValue),
-        })),
-      },
-    });
+    return ApiResponse.success(res, stats, 'Asset statistics calculated successfully');
   } catch (error) {
     next(error);
   }
@@ -109,16 +50,18 @@ export const getAssetStats = async (req, res, next) => {
 // @access  Public / Admin
 export const getAssetById = async (req, res, next) => {
   try {
-    const asset = await Asset.findByPk(req.params.id);
-    if (!asset) {
-      return res.status(404).json({ success: false, message: 'Asset not found' });
+    const { id } = req.params;
+
+    // VALIDATION ONLY
+    if (!id || isNaN(Number(id))) {
+      return ApiResponse.badRequest(res, 'Valid numeric Asset ID is required.');
     }
 
-    res.status(200).json({
-      success: true,
-      asset,
-    });
+    const asset = await assetService.getById(Number(id));
+
+    return ApiResponse.success(res, asset, 'Asset details retrieved successfully');
   } catch (error) {
+    if (error.statusCode === 404) return ApiResponse.notFound(res, error.message);
     next(error);
   }
 };
@@ -128,63 +71,37 @@ export const getAssetById = async (req, res, next) => {
 // @access  Admin Protected
 export const createAsset = async (req, res, next) => {
   try {
-    const {
-      name,
-      assetCode,
-      category,
-      buyPrice,
-      rentPrice,
-      rentUnit,
-      quantity,
-      availableQuantity,
-      status,
-      imageUrl,
-      description,
-      vehicleSpecs,
-    } = req.body;
+    const { name, buyPrice, rentPrice, category, status } = req.body;
 
-    if (!name || buyPrice === undefined || rentPrice === undefined) {
-      return res.status(400).json({
-        success: false,
-        message: 'Asset name, buy price, and rent price are required',
-      });
+    // 1. INPUT VALIDATION ONLY
+    const errors = [];
+    if (!name || typeof name !== 'string' || name.trim().length < 2) {
+      errors.push('Asset name must be at least 2 characters.');
+    }
+    if (buyPrice === undefined || isNaN(Number(buyPrice)) || Number(buyPrice) < 0) {
+      errors.push('Buy price must be a non-negative number.');
+    }
+    if (rentPrice === undefined || isNaN(Number(rentPrice)) || Number(rentPrice) < 0) {
+      errors.push('Rent price must be a non-negative number.');
+    }
+    if (category && !Object.values(AssetCategory).includes(category)) {
+      errors.push(`Invalid category. Allowed: ${Object.values(AssetCategory).join(', ')}`);
+    }
+    if (status && !Object.values(AssetStatus).includes(status)) {
+      errors.push(`Invalid status. Allowed: ${Object.values(AssetStatus).join(', ')}`);
     }
 
-    // Auto generate code if not provided
-    const code =
-      assetCode?.trim().toUpperCase() ||
-      `AST-${(category || 'GEN').substring(0, 3).toUpperCase()}-${Math.floor(1000 + Math.random() * 9000)}`;
-
-    const existing = await Asset.findOne({ where: { assetCode: code } });
-    if (existing) {
-      return res.status(400).json({
-        success: false,
-        message: `Asset code '${code}' already exists. Please use a unique code.`,
-      });
+    if (errors.length > 0) {
+      return ApiResponse.badRequest(res, 'Validation failed for asset creation.', errors);
     }
 
-    const asset = await Asset.create({
-      name,
-      assetCode: code,
-      category: category || 'camping',
-      buyPrice: Number(buyPrice),
-      rentPrice: Number(rentPrice),
-      rentUnit: rentUnit || 'per trip',
-      quantity: Number(quantity) || 1,
-      availableQuantity:
-        availableQuantity !== undefined ? Number(availableQuantity) : Number(quantity) || 1,
-      status: status || 'available',
-      imageUrl,
-      description,
-      vehicleSpecs,
-    });
+    // 2. CALL SERVICE LAYER
+    const createdAsset = await assetService.createAsset(req.body);
 
-    res.status(201).json({
-      success: true,
-      message: 'Asset created successfully',
-      asset,
-    });
+    // 3. RETURN STANDARDIZED API RESPONSE (201 Created)
+    return ApiResponse.created(res, createdAsset, 'Asset created successfully.');
   } catch (error) {
+    if (error.statusCode === 409) return ApiResponse.conflict(res, error.message);
     next(error);
   }
 };
@@ -194,58 +111,46 @@ export const createAsset = async (req, res, next) => {
 // @access  Admin Protected
 export const updateAsset = async (req, res, next) => {
   try {
-    const asset = await Asset.findByPk(req.params.id);
-    if (!asset) {
-      return res.status(404).json({ success: false, message: 'Asset not found' });
+    const { id } = req.params;
+
+    // VALIDATION ONLY
+    if (!id || isNaN(Number(id))) {
+      return ApiResponse.badRequest(res, 'Valid numeric Asset ID is required.');
     }
 
-    // Check code collision if changed
-    if (req.body.assetCode && req.body.assetCode.toUpperCase() !== asset.assetCode) {
-      const code = req.body.assetCode.toUpperCase();
-      const existing = await Asset.findOne({
-        where: {
-          assetCode: code,
-          id: { [Op.ne]: asset.id },
-        },
-      });
-      if (existing) {
-        return res.status(400).json({
-          success: false,
-          message: `Asset code '${code}' already in use by another asset`,
-        });
-      }
-      req.body.assetCode = code;
-    }
+    const updatedAsset = await assetService.updateAsset(Number(id), req.body);
 
-    await asset.update(req.body);
-
-    res.status(200).json({
-      success: true,
-      message: 'Asset updated successfully',
-      asset,
-    });
+    return ApiResponse.success(res, updatedAsset, 'Asset updated successfully.');
   } catch (error) {
+    if (error.statusCode === 404) return ApiResponse.notFound(res, error.message);
+    if (error.statusCode === 409) return ApiResponse.conflict(res, error.message);
     next(error);
   }
 };
 
-// @desc    Delete an asset
+// @desc    Delete an asset (Supports Soft Delete & Hard Delete)
 // @route   DELETE /api/assets/:id
+// @query   hard=true (Optional: permanent deletion; default false sets isDelete: true)
 // @access  Admin Protected
 export const deleteAsset = async (req, res, next) => {
   try {
-    const asset = await Asset.findByPk(req.params.id);
-    if (!asset) {
-      return res.status(404).json({ success: false, message: 'Asset not found' });
+    const { id } = req.params;
+
+    // VALIDATION ONLY
+    if (!id || isNaN(Number(id))) {
+      return ApiResponse.badRequest(res, 'Valid numeric Asset ID is required.');
     }
 
-    await asset.destroy();
+    const isHard = req.query.hard === 'true' || req.body?.hard === true;
+    const result = await assetService.delete(Number(id), { hard: isHard });
 
-    res.status(200).json({
-      success: true,
-      message: 'Asset deleted successfully',
-    });
+    if (isHard) {
+      return ApiResponse.success(res, result, `Asset #${id} permanently deleted from database (Hard Delete)`);
+    }
+
+    return ApiResponse.success(res, result, `Asset #${id} moved to trash (Soft Delete: isDelete set to true)`);
   } catch (error) {
+    if (error.statusCode === 404) return ApiResponse.notFound(res, error.message);
     next(error);
   }
 };
@@ -256,17 +161,16 @@ export const deleteAsset = async (req, res, next) => {
 export const uploadAssetImage = async (req, res, next) => {
   try {
     if (!req.file) {
-      return res.status(400).json({ success: false, message: 'No file provided' });
+      return ApiResponse.badRequest(res, 'Please provide an image file to upload.');
     }
 
-    const fileUrl = await processUploadedFile(req.file, req);
+    const fileUrl = await assetService.uploadImage(req.file, req);
 
-    res.status(200).json({
-      success: true,
-      fileUrl,
-      message: 'Asset image uploaded successfully',
-    });
+    return ApiResponse.created(res, { fileUrl }, 'Asset image uploaded successfully.');
   } catch (error) {
+    if (error.statusCode) {
+      return ApiResponse.send(res, error.statusCode, { success: false, message: error.message });
+    }
     next(error);
   }
 };

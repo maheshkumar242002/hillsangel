@@ -1,24 +1,18 @@
-import Settings from '../models/Settings.js';
+import settingsService from '../service/settingsService.js';
+import { ApiResponse } from '../common/index.js';
+
+/**
+ * Settings Controller
+ * RESPONSIBILITY: Request validation, calling SettingsService, returning ApiResponse.
+ */
 
 // @desc    Get website settings (WhatsApp number, contacts, hero, etc.)
 // @route   GET /api/settings
 // @access  Public
 export const getSettings = async (req, res, next) => {
   try {
-    let settings = await Settings.findOne();
-    if (!settings) {
-      settings = await Settings.create({
-        siteName: 'Hills Angel Tours and Travels',
-        whatsappNumber: process.env.WHATSAPP_NUMBER || '918111039182',
-        contactPhone: '+91 81110 39182',
-        contactEmail: 'info@hillsangels.com',
-      });
-    }
-
-    res.status(200).json({
-      success: true,
-      settings,
-    });
+    const settings = await settingsService.getSettings();
+    return ApiResponse.success(res, { settings }, 'Website settings retrieved successfully');
   } catch (err) {
     next(err);
   }
@@ -29,18 +23,23 @@ export const getSettings = async (req, res, next) => {
 // @access  Private (Admin)
 export const updateSettings = async (req, res, next) => {
   try {
-    let settings = await Settings.findOne();
-    if (!settings) {
-      settings = await Settings.create(req.body);
-    } else {
-      await settings.update(req.body);
+    const { contactEmail, whatsappNumber } = req.body;
+    const errors = [];
+
+    if (contactEmail && !/^\S+@\S+\.\S+$/.test(contactEmail)) {
+      errors.push('Invalid contact email format.');
     }
 
-    res.status(200).json({
-      success: true,
-      message: 'Website settings updated successfully.',
-      settings,
-    });
+    if (whatsappNumber && !/^\d{10,14}$/.test(whatsappNumber.replace(/\D/g, ''))) {
+      errors.push('Invalid WhatsApp phone number format.');
+    }
+
+    if (errors.length > 0) {
+      return ApiResponse.badRequest(res, 'Validation failed for settings update.', errors);
+    }
+
+    const settings = await settingsService.updateSettings(req.body);
+    return ApiResponse.success(res, { settings }, 'Website settings updated successfully.');
   } catch (err) {
     next(err);
   }
